@@ -1,6 +1,7 @@
 import sklearn
 import numpy as np
-
+import sys
+#sys.path.append('/home/yfeng/UltimatePuppi/deepjet-geometric/')
 from deepjet_geometric.datasets import UPuppiV0
 from torch_geometric.data import DataLoader
 import os
@@ -9,6 +10,8 @@ BATCHSIZE = 30
 
 data_train = UPuppiV0("/work/submit/bmaier/upuppi/data/v0_z_regression/train/")
 data_test = UPuppiV0("/work/submit/bmaier/upuppi/data/v0_z_regression/test/")
+#data_train = UPuppiV0("/home/yfeng/UltimatePuppi/deepjet-geometric/data/train/")
+#data_test = UPuppiV0("/home/yfeng/UltimatePuppi/deepjet-geometric/data/test/")
 
 train_loader = DataLoader(data_train, batch_size=BATCHSIZE, shuffle=True,
                           follow_batch=['x_pfc', 'x_vtx'])
@@ -17,86 +20,17 @@ test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
 
 import torch
 from torch import nn
-import torch.nn.functional as F
-from torch_geometric.nn.conv import DynamicEdgeConv
-from torch_geometric.nn.pool import avg_pool_x
-from torch.nn import Sequential, Linear
+from models.model import Net
 
-import utils
+#import utils
 
-OUTPUT = '/home/bmaier/public_html/figs/puma/geometric_v2/'
 model_dir = '/home/submit/ishenogi/upuppi/deepjet-geometric/examples/models/v0/'
-
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        
-        hidden_dim = 32
-        
-        self.vtx_encode = nn.Sequential(
-            nn.Linear(4, hidden_dim),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.LeakyReLU()
-        )
-        
-        #self.glob_encode = nn.Sequential(
-        #    nn.Linear(1, hidden_dim),
-        #    nn.ELU(),
-        #    nn.Linear(hidden_dim, hidden_dim),
-        #    nn.ELU()
-        #)
-        
-        self.pfc_encode = nn.Sequential(
-            nn.Linear(7, hidden_dim),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.LeakyReLU()
-        )
-
-        self.conv = DynamicEdgeConv(
-            nn=nn.Sequential(nn.Linear(2*hidden_dim, hidden_dim), nn.LeakyReLU()),
-            k=16
-        )
-        
-        self.output = nn.Sequential(
-            nn.Linear(hidden_dim, 64),
-            nn.LeakyReLU(),
-            nn.Linear(64, 32),
-            nn.LeakyReLU(),
-            nn.Linear(32, 4),
-            nn.LeakyReLU(),
-            nn.Linear(4, 1), nn.LeakyReLU()
-        )
-        
-    def forward(self,
-                x_pfc, x_vtx,
-                batch_pfc, batch_vtx):
-        x_pfc_enc = self.pfc_encode(x_pfc)
-        x_vtx_enc = self.vtx_encode(x_vtx)
-        #x_glob_enc = self.glob_encode(x_glob)
-        
-        # create a representation of PFs to clusters
-        feats1 = self.conv(x=(x_pfc_enc, x_pfc_enc), batch=(batch_pfc, batch_pfc))
-
-        # similarly a representation of PFs-clusters amalgam to PFs
-        feats2 = self.conv(x=(x_vtx_enc, feats1), batch=(batch_vtx, batch_pfc))
-
-        # now to global variables
-        #feats3 = self.conv(x=(x_glob_enc, feats2), batch=(batch_pfc, batch_pfc))
-
-        batch = batch_pfc
-        #out, batch = avg_pool_x(batch, feats2, batch)        
-        #out = self.output(out)
-        out = self.output(feats2)
-        
-        return out, batch
-        
+#model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-upuppi = Net().to(device)
+upuppi = Net(isFCN=True).to(device)
 #puma.load_state_dict(torch.load(model_dir+"epoch-32.pt")['model'])
 optimizer = torch.optim.Adam(upuppi.parameters(), lr=0.001)
 #optimizer.load_state_dict(torch.load(model_dir+"epoch-32.pt")['opt'])
@@ -130,7 +64,7 @@ def train():
         #print("Predicted values on training dataset: ", torch.squeeze(out[0]).view(-1)[data.x_pfc[:,-1]==0])
         #print("Actual values in training dataset: ", data.y[data.x_pfc[:,-1]==0])	
 
-        loss = nn.MSELoss()(torch.squeeze(out[0]).view(-1)[data.x_pfc[:,-2]==0], data.y[data.x_pfc[:,-2]==0])
+        loss = nn.MSELoss()(out[0][:,0], data.y)
         loss.backward()
         total_loss += loss.item()
         optimizer.step()
@@ -150,16 +84,17 @@ def test():
                         data.x_vtx,
                         data.x_pfc_batch,
                         data.x_vtx_batch)
-            #print("Predicted values on validation dataset: ", torch.squeeze(out[0]).view(-1)[data.x_pfc[:,-1]==0])
-            #print("Actual values in validtion dataset: ",  data.y[data.x_pfc[:,-1]==0])
+            #print("Predicted values on validation dataset: ", torch.squeeze(out[0]).view(-1)[data.x_pfc[:,-2]!=0])
+            #print("In the dataset: ", data.x_pfc[data.x_pfc[:,-2]!=0,-1])
+            #print("Actual values in validtion dataset: ",  data.y[data.x_pfc[:,-2]!=0])
 
-            loss = nn.MSELoss()(torch.squeeze(out[0]).view(-1)[data.x_pfc[:,-2]==0], data.y[data.x_pfc[:,-2]==0])
+            #loss = nn.MSELoss()(torch.squeeze(out[0]).view(-1)[data.x_pfc[:,-2]!=0], data.y[data.x_pfc[:,-2]!=0])
+            loss = nn.MSELoss()(out[0][:,0], data.y)
             total_loss += loss.item()
     return total_loss / len(test_loader.dataset)
 
 
-
-for epoch in range(1, 2):
+for epoch in range(1, 20):
     loss = train()
     scheduler.step()
     loss_val = test()
@@ -239,6 +174,7 @@ datadict = {'zpred':final_ftp,'ztrue':final_ftt,'input_pt':final_f_pt,'input_eta
         'input_charge':final_f_charge,'input_z':final_f_inputz}
 df = pd.DataFrame.from_dict(datadict)
 df.to_csv("/work/submit/bmaier/upuppi/results/finalcsv.txt")
+#df.to_csv("/home/yfeng/UltimatePuppi/deepjet-geometric/results/finalcsv.txt")
 
 '''
 
