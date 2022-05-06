@@ -64,12 +64,17 @@ class UPuppiV0(Dataset):
             x_pfc = f['pfs'][idx_in_file,:Npfc,:]
             x_vtx = f['vtx'][idx_in_file,:Nvtx,:]
 
+            pfSelection = np.ones(Npfc, dtype=bool)
+            #pfSelection = (x_pfc[:, -2] != 0)
+
+            x_pfc = x_pfc[pfSelection, :]
+
             # convert to torch
             x_pfc = torch.from_numpy(x_pfc).float()
             x_vtx = torch.from_numpy(x_vtx).float()
 
             # target
-            y = torch.from_numpy(f['z'][idx_in_file,:Npfc]).float()
+            y = torch.from_numpy(f['z'][idx_in_file,:Npfc][pfSelection]).float()
 
             # gen info
             #gen = f['geninfo']
