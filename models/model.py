@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch_geometric.nn.conv import DynamicEdgeConv
 from torch_geometric.nn.pool import avg_pool_x
-# from torch.nn import Sequential, Linear
+from torch.nn import Sequential, Linear
 
 
 class Net(nn.Module):
@@ -28,7 +28,7 @@ class Net(nn.Module):
 
         if not self.isFCN:
             self.pfc_encode = nn.Sequential(
-                nn.Linear(7, hidden_dim),
+                nn.Linear(13, hidden_dim),
                 nn.LeakyReLU(),
                 nn.Linear(hidden_dim, hidden_dim),
                 nn.LeakyReLU()
@@ -36,7 +36,7 @@ class Net(nn.Module):
 
             self.conv = DynamicEdgeConv(
                 nn=nn.Sequential(nn.Linear(2*hidden_dim, hidden_dim), nn.LeakyReLU()),
-                k=16
+                k=40
             )
 
             self.output = nn.Sequential(
@@ -46,11 +46,11 @@ class Net(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(32, 4),
                 nn.LeakyReLU(),
-                nn.Linear(4, 1), nn.LeakyReLU()
+                nn.Linear(4, 1)
             )
         else:
             self.pfc_encode = nn.Sequential(
-                nn.Linear(7, hidden_dim),
+                nn.Linear(13, hidden_dim),
                 nn.LeakyReLU(),
                 nn.Linear(hidden_dim, hidden_dim),
                 nn.LeakyReLU(),
@@ -85,4 +85,3 @@ class Net(nn.Module):
             out = self.pfc_encode(x_pfc)
 
         return out, batch
-

@@ -11,6 +11,10 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+
+# results csv and txt
+results/*.csv
+results/*.txt
 downloads/
 eggs/
 .eggs/
