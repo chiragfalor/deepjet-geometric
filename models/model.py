@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch_geometric.nn.conv import DynamicEdgeConv
 from torch_geometric.nn.pool import avg_pool_x
-from torch.nn import Sequential, Linear
+# from torch.nn import Sequential, Linear
 
 
 class Net(nn.Module):
