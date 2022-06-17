@@ -9,9 +9,10 @@ import os
 import torch
 from torch import nn
 from models.model2 import Net
+from tqdm import tqdm
 
 
-BATCHSIZE = 1
+BATCHSIZE = 32
 start_time = time.time()
 print("Training...")
 # data_train = UPuppiV0("/work/submit/cfalor/upuppi/z_reg/train/")
@@ -23,7 +24,8 @@ train_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
 test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
                          follow_batch=['x_pfc', 'x_vtx'])
 
-model_dir = '/work/submit/cfalor/upuppi/z_reg/models/'
+model = "embedding_model"
+model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 #model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -42,7 +44,7 @@ def train():
     euclidean_loss = nn.MSELoss().to(device)
     counter = 0
     total_loss = 0
-    for data in train_loader:
+    for data in tqdm(train_loader):
         counter += 1
         data = data.to(device)
         optimizer.zero_grad()
@@ -53,6 +55,8 @@ def train():
         # pfc_enc has shape (batch_size*number of particles, hidden_dim)
         # x_pfc_batch has shape (batch_size*number of particles) storing the corresponding batch index
         loss = 0
+        total_pfc_loss = 0
+        total_vtx_loss = 0
         for i in range(BATCHSIZE):
             # get the batch index of the current batch
             pfc_indices = (data.x_pfc_batch == i)
@@ -63,8 +67,8 @@ def train():
             truth_batch = data.truth[pfc_indices].to(dtype=torch.int64, device=device)
             # get length of vtx_enc_batch
             vtx_enc_batch_len = vtx_enc_batch.shape[0]
-            # pop out truth values which are greater than the length of vtx_enc_batch
-            valid_vertices = (truth_batch < vtx_enc_batch_len)
+            # pop out truth values which are greater than the length of vtx_enc_batch or less than 0
+            valid_vertices = (truth_batch < vtx_enc_batch_len) & (truth_batch >= 0)
             truth_batch = truth_batch[valid_vertices]
             pfc_enc_batch = pfc_enc_batch[valid_vertices, :]
             # the true encoding is the embedding of the true vertex
@@ -83,16 +87,26 @@ def train():
             # the loss is the MSE distance between the embedding of the pfc and the true vertex
             pfc_loss = euclidean_loss(pfc_enc_batch, true_pfc_encoding)
             # add the loss to the total loss
-            print(pfc_loss)
-            loss += pfc_loss
+            # print("Particle loss: ", pfc_loss)
+            total_pfc_loss += pfc_loss
             # calculate the loss due to the vtx embedding
             # the vertex embedding should be as far from other vertices as possible
             # the loss is the MSE distance between the embedding of the vtx and the other vertices
-            for j in range(len(vtx_enc_batch)):
-                for k in range(j+1, len(vtx_enc_batch)):
-                    vtx_loss = 0.01*euclidean_loss(vtx_enc_batch[j, :], vtx_enc_batch[k, :])
-                    loss -= vtx_loss
-        print("loss: ", loss)
+            # randomly choose 25 vertices to calculate the loss
+            random_indices = torch.randperm(vtx_enc_batch_len)[:25]
+            random_vtx_encoding = vtx_enc_batch[random_indices, :]
+            for j in range(len(random_vtx_encoding)):
+                for k in range(j+1, len(random_vtx_encoding)):
+                    vtx_loss = -0.001*euclidean_loss(random_vtx_encoding[j, :], random_vtx_encoding[k, :])
+                    total_vtx_loss += vtx_loss
+        # regularization loss
+        reg_loss = 10*((torch.norm(vtx_enc, p=2, dim=1) - 10)**2).mean()
+        print(torch.norm(vtx_enc, p=2, dim=1).mean())
+        print("Particle loss: ", total_pfc_loss)
+        print("Vertex loss: ", total_vtx_loss)
+        print("Reg loss: ", reg_loss)
+        loss = total_pfc_loss + total_vtx_loss + reg_loss
+        print("loss after regularization: ", loss)
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
@@ -130,12 +144,17 @@ def test():
 
 # train the model
 
-for epoch in range(100):
-    loss = train()
-    test_loss = test()
+for epoch in range(10):
+    loss = 0
+    test_loss = 0
     print("Epoch: ", epoch, " Loss: ", loss, " Test Loss: ", test_loss)
-    torch.save(upuppi.state_dict(), model_dir + "model_" + str(epoch) + ".pt")
+    state_dicts = {'model':upuppi.state_dict(),
+                   'opt':optimizer.state_dict()} 
+
+    torch.save(state_dicts, os.path.join(model_dir, 'epoch-{}.pt'.format(epoch)))
     print("Model saved")
     print("Time elapsed: ", time.time() - start_time)
     print("-----------------------------------------------------")
+    loss = train()
+    test_loss = test()
 
