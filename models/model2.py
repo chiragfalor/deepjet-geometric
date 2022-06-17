@@ -7,7 +7,7 @@ from torch.nn import Sequential, Linear
 
 
 class Net(nn.Module):
-    def __init__(self, hidden_dim = 32):
+    def __init__(self, hidden_dim = 16):
         super(Net, self).__init__()
         self.vtx_encode = nn.Sequential(
             nn.Linear(4, hidden_dim//4),

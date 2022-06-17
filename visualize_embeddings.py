@@ -9,7 +9,11 @@ import torch
 from upuppi_v0_dataset import UPuppiV0
 from torch_geometric.data import DataLoader
 
-def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, save_path):
+# random seed
+np.random.seed(0)
+torch.manual_seed(42)
+
+def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
     # in 2D space
     # represent particles with dots and vertices with stars
@@ -32,10 +36,13 @@ def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, save_path):
     # plot the embeddings
     fig, ax = plt.subplots()
     # plot the particles
-    ax.scatter(pfc_embeddings_2d[:, 0], pfc_embeddings_2d[:, 1], c=pfc_truth, cmap=cm.get_cmap('jet', 10))
+    
+    plt.scatter(pfc_embeddings_2d[:, 0], pfc_embeddings_2d[:, 1], c=pfc_truth, cmap=cm.get_cmap('jet'))
+    cbar = plt.colorbar()
     # plot the vertices
+    plt.scatter(vtx_embeddings_2d[:, 0], vtx_embeddings_2d[:, 1], c=vtx_truth, cmap=cm.get_cmap('jet'), marker='*', s=100)
     # the color of vertices is index
-    ax.scatter(vtx_embeddings_2d[:, 0], vtx_embeddings_2d[:, 1], c=np.arange(vtx_embeddings_2d.shape[0]), cmap=cm.get_cmap('jet', 10), marker='*', s=100)
+    # add colorbar
     # save the plot
     plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}'.format(save_path))
     plt.close()
@@ -50,7 +57,7 @@ if __name__ == '__main__':
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 2
+    epoch_num = 0
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     net = Net()
     net.load_state_dict(upuppi_state_dict)
@@ -59,8 +66,14 @@ if __name__ == '__main__':
         data = next(iter(test_loader))
         # x_pfc = data.x_pfc.view(1, -1)
         # x_vtx = data.x_vtx.view(1, -1)
-        truth = data.truth
+        pfc_truth = data.y.detach().numpy()
+        vtx_truth = data.x_vtx[:, 2].detach().numpy()
         pfc_embeddings, vtx_embeddings = net(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
         # visualize the embeddings
-        visualize_embeddings(pfc_embeddings.cpu().numpy(), vtx_embeddings.cpu().numpy(), truth, 'vis_emb1.png')
+        
+        neutral_idx = torch.nonzero(data.x_pfc[:,11] == 0).squeeze()
+        charged_idx = torch.nonzero(data.x_pfc[:,11] != 0).squeeze()
+        neutral_embeddings = pfc_embeddings[neutral_idx]
+        neutral_truth = pfc_truth[neutral_idx]
+        visualize_embeddings(pfc_embeddings.cpu().numpy(), vtx_embeddings.cpu().numpy(), pfc_truth, vtx_truth, 'vis_emb{}.png'.format(epoch_num))
 

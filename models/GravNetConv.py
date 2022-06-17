@@ -56,4 +56,4 @@ class Net(nn.Module):
         feats = self.ffn(feats)
         feats = torch.cat([feats, x_pfc[:,:-1]], dim=1)
         out = self.output(feats)
-        return out, batch
+        return out, batch, x_pfc_enc
