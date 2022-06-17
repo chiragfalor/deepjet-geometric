@@ -10,19 +10,22 @@ from tqdm import tqdm
 # if __name__ == '__main__':
 #     file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_48.h5", "r")
 #     file_out = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/raw/samples_v0_dijet_48.h5", "w")
-for fileid in range(30,40):
+for fileid in range(1, 101):
 #     if fileid == 40:
 #         file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_4.h5", "r")
 #         # make a new file to store the processed data
 #         file_out = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/raw/samples_v0_dijet_4.h5", "w")
-#     elif fileid == 56:
-#         file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_5.h5", "r")
-#         # make a new file to store the processed data
-#         file_out = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/raw/samples_v0_dijet_5.h5", "w")
+    # if fileid == 56:
+    #     file = h5py.File("/work/submit/cfalor/upuppi/z_reg/test/notr/samples_v0_dijet_5.h5", "r")
+    #     # make a new file to store the processed data
+    #     file_out = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/test/raw/samples_v0_dijet_5.h5", "w")
 #     else:
-    file = h5py.File("/work/submit/cfalor/upuppi/z_reg/test/notr/samples_v0_dijet_"+str(fileid)+".h5", "r")
-    file_out = h5py.File("/work/submit/cfalor/upuppi/z_reg/test/raw/samples_v0_dijet_"+str(fileid)+".h5", "w")
-
+    try:
+        file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_"+str(fileid)+".h5", "r")
+        file_out = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/train/raw/samples_v0_dijet_"+str(fileid)+".h5", "w")
+    except:
+        print("fileid:", fileid)
+        continue
     # copy the header from the original file
     for key in file.keys():
         if key == "vtx" or key == "z" or key == "truth":

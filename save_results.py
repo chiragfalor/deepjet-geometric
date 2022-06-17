@@ -78,11 +78,11 @@ def save_predictions(model, data_loader, model_name):
 
     datadict = {'zpred':zpred, 'ztrue':ztrue, 'px':px, 'py':py, 'eta':eta, 'E':E, 'pid':pid, 'charge':charge, 'zinput':zinput}
     df = pd.DataFrame.from_dict(datadict)
-    df.to_csv("/work/submit/cfalor/upuppi/z_reg/results/{}.csv".format(model_name), index=False)
+    df.to_csv("/work/submit/cfalor/deepjet-geometric/z_reg/results/{}.csv".format(model_name), index=False)
 
 if __name__ == "__main__":
     BATCHSIZE = 32
-    data_test = UPuppiV0("/work/submit/cfalor/upuppi/z_reg/test/")
+    data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
     test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
                             follow_batch=['x_pfc', 'x_vtx'])
 

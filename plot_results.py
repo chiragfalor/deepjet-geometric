@@ -8,7 +8,7 @@ import numpy as np
 model = "DynamicGCN"
 model = "GravNetConv"
 # df = pd.read_csv("/work/submit/cfalor/upuppi/z_reg/results/finalcsv.txt")
-df = pd.read_csv("/work/submit/cfalor/upuppi/z_reg/results/{}.csv".format(model))
+df = pd.read_csv("/work/submit/cfalor/upuppi/deepjet-geometric/results/{}.csv".format(model))
 print(df.head())
 
 # make 3 plots:
@@ -40,6 +40,6 @@ axs[2].set_xlabel('ztrue')
 axs[2].set_ylabel('zpred')
 axs[2].set_title('zpred vs ztrue for particles with input_charge != 0') 
 
-plt.savefig('/work/submit/cfalor/upuppi/z_reg/results/{}_zpred_vs_ztrue.png'.format(model))
+plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}_zpred_vs_ztrue.png'.format(model))
 plt.close()
 

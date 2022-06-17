@@ -19,6 +19,11 @@ downloads/
 eggs/
 .eggs/
 lib/
+
+# datasets
+train/
+test/
+val/
 lib64/
 parts/
 sdist/

@@ -2,13 +2,14 @@ import h5py
 import sys
 # import awkward as ak
 import numpy as np
+import matplotlib.pyplot as plt
 
 # import uproot as uproot
 # import smear_chargedhadrons as sch
 # from awkward import Array
 # from awkward.layout import ListOffsetArray64
 
-file = h5py.File("/work/submit/bmaier/upuppi/data/v0_z_regression/train/raw/samples_v0_dijet_48.h5", "r")
+file = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/test/raw/samples_v0_dijet_52.h5", "r")
 
 print("Keys:", file.keys())
 
@@ -58,6 +59,8 @@ print(pfs[960,1047,:])
 # print("pfs sample:", pfs[0,0:10,:])
 
 pid = pfs[:,:,4]
+phi = pfs[:,:,2]
+print(np.min(phi))
 # print(pid.shape)
 pid = pid.astype(int)
 # # print all unique values in the pid column
@@ -76,5 +79,22 @@ print("unique vnum values:", np.unique(vnum))
 # print("vtx shape:", vtx.shape)
 # print("z shape:", z.shape)
 # print(pfs[27,343,:])
+valid_truth_idx = truth > 0
+# print(z.shape)
+# z = z[valid_truth_idx]
+# print(z.shape)
+# z = z.astype(float)
+# # plot the z-coordinate of the particles
+# plt.hist(z, bins=100)
+plt.savefig("z_hist.png")
+plt.close()
+# flatten truth
+truth_flat = truth.flatten()
+# add 1 to the truth to get the correct truth
+truth_flat = truth_flat
+truth_flat = truth_flat.astype(int)
+# print unique values in the truth column
+print("unique truth values:", np.unique(truth_flat))
+print("number of particles with each truth:", np.bincount(truth_flat))
 
        
