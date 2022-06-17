@@ -15,8 +15,7 @@ class Net(nn.Module):
         self.vtx_encode = nn.Sequential(
             nn.Linear(4, hidden_dim),
             nn.LeakyReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.LeakyReLU()
+            nn.Linear(hidden_dim, hidden_dim)
         )
 
         #self.glob_encode = nn.Sequential(
@@ -30,13 +29,12 @@ class Net(nn.Module):
             self.pfc_encode = nn.Sequential(
                 nn.Linear(13, hidden_dim),
                 nn.LeakyReLU(),
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.LeakyReLU()
+                nn.Linear(hidden_dim, hidden_dim)
             )
 
             self.conv = DynamicEdgeConv(
                 nn=nn.Sequential(nn.Linear(2*hidden_dim, hidden_dim), nn.LeakyReLU()),
-                k=40
+                k=64
             )
 
             self.output = nn.Sequential(
@@ -72,7 +70,10 @@ class Net(nn.Module):
             feats1 = self.conv(x=(x_pfc_enc, x_pfc_enc), batch=(batch_pfc, batch_pfc))
 
             # similarly a representation of PFs-clusters amalgam to PFs
-            feats2 = self.conv(x=(x_vtx_enc, feats1), batch=(batch_vtx, batch_pfc))
+            # concat x_vtx_enc and feats1
+            combined_feats = torch.cat((x_vtx_enc, feats1), dim=0)
+            combined_batch = torch.cat((batch_vtx, batch_pfc), dim=0)
+            feats2 = self.conv(x=(combined_feats, feats1), batch=(combined_batch, batch_pfc))
 
             # now to global variables
             #feats3 = self.conv(x=(x_glob_enc, feats2), batch=(batch_pfc, batch_pfc))
@@ -84,4 +85,4 @@ class Net(nn.Module):
         else:
             out = self.pfc_encode(x_pfc)
 
-        return out, batch
+        return out, batch, feats1, x_vtx_enc

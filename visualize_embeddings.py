@@ -11,7 +11,7 @@ from torch_geometric.data import DataLoader
 
 # random seed
 np.random.seed(0)
-torch.manual_seed(42)
+torch.manual_seed(23)
 
 def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
@@ -75,5 +75,5 @@ if __name__ == '__main__':
         charged_idx = torch.nonzero(data.x_pfc[:,11] != 0).squeeze()
         neutral_embeddings = pfc_embeddings[neutral_idx]
         neutral_truth = pfc_truth[neutral_idx]
-        visualize_embeddings(pfc_embeddings.cpu().numpy(), vtx_embeddings.cpu().numpy(), pfc_truth, vtx_truth, 'vis_emb{}.png'.format(epoch_num))
+        visualize_embeddings(neutral_embeddings.cpu().numpy(), vtx_embeddings.cpu().numpy(), neutral_truth, vtx_truth, 'vis_emb{}.png'.format(epoch_num))
 

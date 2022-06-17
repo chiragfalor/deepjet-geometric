@@ -8,11 +8,11 @@ from torch_geometric.data import DataLoader
 import os
 import torch
 from torch import nn
-from models.model2 import Net
+from models.model import Net
 from tqdm import tqdm
 
 
-BATCHSIZE = 32
+BATCHSIZE = 64
 start_time = time.time()
 print("Training...")
 data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train/")
@@ -24,12 +24,12 @@ train_loader = DataLoader(data_train, batch_size=BATCHSIZE, shuffle=True,
 test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
                          follow_batch=['x_pfc', 'x_vtx'])
 
-model = "embedding_model"
+model = "combined_model"
 model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 #model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-device = torch.device('cpu')
+# device = torch.device('cpu')
 # print the device used
 print("Using device: ", device, torch.cuda.get_device_name(0))
 
@@ -37,7 +37,7 @@ print("Using device: ", device, torch.cuda.get_device_name(0))
 upuppi = Net().to(device)
 optimizer = torch.optim.Adam(upuppi.parameters(), lr=0.001)
 
-def loss_fn(data, pfc_enc, vtx_enc):
+def embedding_loss(data, pfc_enc, vtx_enc):
     total_pfc_loss = 0
     total_vtx_loss = 0
     reg_loss = 0
@@ -79,7 +79,7 @@ def loss_fn(data, pfc_enc, vtx_enc):
 
 
 
-def train():
+def train(c_ratio=0.1):
     upuppi.train()
     counter = 0
     total_loss = 0
@@ -87,8 +87,12 @@ def train():
         counter += 1
         data = data.to(device)
         optimizer.zero_grad()
-        pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
-        loss = loss_fn(data, pfc_enc, vtx_enc)
+        out, batch, pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
+        emb_loss = embedding_loss(data, pfc_enc, vtx_enc)
+        regression_loss = nn.MSELoss()(out.squeeze(), data.y)
+        # Print values of losses
+        print("Regression loss: ", regression_loss.item(), " Embedding loss: ", emb_loss.item())
+        loss = (c_ratio*emb_loss) + (1-c_ratio)*regression_loss
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
@@ -108,8 +112,9 @@ def test():
         counter += 1
         data = data.to(device)
         optimizer.zero_grad()
-        pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
-        loss = loss_fn(data, pfc_enc, vtx_enc)
+        out, batch, pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
+        regression_loss = nn.MSELoss()(out.squeeze(), data.y)
+        loss = regression_loss
         total_loss += loss.item()
     total_loss = total_loss / counter        
     return total_loss
