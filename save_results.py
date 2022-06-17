@@ -46,7 +46,7 @@ def save_predictions(model, data_loader, model_name):
         counter += 1
         data.to(device)
         with torch.no_grad():
-            out = upuppi(data.x_pfc,data.x_pfc_batch)
+            out = upuppi(data.x_pfc,data.x_vtx,data.x_pfc_batch,data.x_vtx_batch)
             loss = nn.MSELoss()(out[0][:,0], data.y)
             total_loss += loss.item()
 
@@ -78,7 +78,7 @@ def save_predictions(model, data_loader, model_name):
 
     datadict = {'zpred':zpred, 'ztrue':ztrue, 'px':px, 'py':py, 'eta':eta, 'E':E, 'pid':pid, 'charge':charge, 'zinput':zinput}
     df = pd.DataFrame.from_dict(datadict)
-    df.to_csv("/work/submit/cfalor/deepjet-geometric/z_reg/results/{}.csv".format(model_name), index=False)
+    df.to_csv("/work/submit/cfalor/upuppi/deepjet-geometric/results/{}.csv".format(model_name), index=False)
 
 if __name__ == "__main__":
     BATCHSIZE = 32
@@ -87,11 +87,13 @@ if __name__ == "__main__":
                             follow_batch=['x_pfc', 'x_vtx'])
 
 
-    epoch_to_load = 5
+    epoch_to_load = 3
     # model = "DynamicGCN"
     # model = "GAT"
     model = "GravNetConv"
     # model = "No_Encode_grav_net"
+    model = "combined_model"
+    model = "combined_model2"
     # import DynamicGCN.py or GAT.py in models folder
     if model == "DynamicGCN":
         from models.DynamicGCN import Net
@@ -101,11 +103,13 @@ if __name__ == "__main__":
         from models.GravNetConv import Net
     elif model == "No_Encode_grav_net":
         from models.No_Encode_grav_net import Net
+    elif model == "combined_model2" or model == "combined_model":
+        from models.model import Net
     else:
         raise(Exception("Model not found"))
 
     upuppi = Net()
-    model_dir = '/work/submit/cfalor/upuppi/z_reg/models/{}/'.format(model)
+    model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
     model_loc = os.path.join(model_dir, 'epoch-{}.pt'.format(epoch_to_load))
     print("Saving predictions of model {}".format(model), "at epoch {}".format(epoch_to_load))
 

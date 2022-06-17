@@ -35,7 +35,7 @@ print("Using device: ", device, torch.cuda.get_device_name(0))
 
 # create the model
 upuppi = Net().to(device)
-optimizer = torch.optim.Adam(upuppi.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(upuppi.parameters(), lr=0.01)
 
 def embedding_loss(data, pfc_enc, vtx_enc):
     total_pfc_loss = 0
@@ -61,15 +61,17 @@ def embedding_loss(data, pfc_enc, vtx_enc):
         pfc_loss = 0.5*euclidean_loss(pfc_enc_batch, vertex_encoding)
         total_pfc_loss += pfc_loss
 
-        # now regularize to keep vertices far
-        random_indices = torch.randperm(len(truth_batch))[:30]
-        random_vtx_encoding = vertex_encoding[random_indices, :]
-        for j in range(len(random_vtx_encoding)):
-            for k in range(j+1, len(random_vtx_encoding)):
-                vtx_loss = -0.001*euclidean_loss(random_vtx_encoding[j, :], random_vtx_encoding[k, :])
-                total_vtx_loss += vtx_loss
-        
-        # regularize the whole embedding to keep it normalized
+        if i//10 == 0:
+            random_indices = torch.randperm(len(truth_batch))[:30]
+            random_vtx_encoding = vertex_encoding[random_indices, :]
+            for j in range(len(random_vtx_encoding)):
+                for k in range(j+1, len(random_vtx_encoding)):
+                    vtx_loss = -0.01*euclidean_loss(random_vtx_encoding[j, :], random_vtx_encoding[k, :])
+                    total_vtx_loss += vtx_loss
+        else:
+            continue
+            
+            # regularize the whole embedding to keep it normalized
     reg_loss = ((torch.norm(vtx_enc, p=2, dim=1)/10)**6).mean()
     # print the losses
     print("Pfc loss: ", total_pfc_loss.item(), " Vtx loss: ", total_vtx_loss.item(), " Reg loss: ", reg_loss.item())
@@ -79,7 +81,7 @@ def embedding_loss(data, pfc_enc, vtx_enc):
 
 
 
-def train(c_ratio=0.1):
+def train(c_ratio=0.05):
     upuppi.train()
     counter = 0
     total_loss = 0
@@ -88,16 +90,17 @@ def train(c_ratio=0.1):
         data = data.to(device)
         optimizer.zero_grad()
         out, batch, pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
-        emb_loss = embedding_loss(data, pfc_enc, vtx_enc)
+        if c_ratio > 0:
+            emb_loss = embedding_loss(data, pfc_enc, vtx_enc)
+        else:
+            emb_loss = 0
         regression_loss = nn.MSELoss()(out.squeeze(), data.y)
         # Print values of losses
-        print("Regression loss: ", regression_loss.item(), " Embedding loss: ", emb_loss.item())
+        print("Regression loss: ", regression_loss.item(), " Embedding loss: ", emb_loss)
         loss = (c_ratio*emb_loss) + (1-c_ratio)*regression_loss
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-        if counter % 100 == 0:
-            print("Iteration: ", counter, " Loss: ", total_loss)
     total_loss = total_loss / counter        
     return total_loss
 
@@ -124,7 +127,10 @@ def test():
 for epoch in range(10):
     loss = 0
     test_loss = 0
-    loss = train()
+    if epoch % 2 == 0:
+        loss = train()
+    else:
+        loss = train(c_ratio=0)
     state_dicts = {'model':upuppi.state_dict(),
                    'opt':optimizer.state_dict()} 
 
@@ -132,8 +138,8 @@ for epoch in range(10):
     print("Model saved")
     print("Time elapsed: ", time.time() - start_time)
     print("-----------------------------------------------------")
-    test_loss = test()
-    print("Epoch: ", epoch, " Loss: ", loss, " Test Loss: ", test_loss)
+    # test_loss = test()
+    print("Epoch: ", epoch, " Loss: ", loss)
 
     
 

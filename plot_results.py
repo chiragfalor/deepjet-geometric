@@ -7,6 +7,8 @@ import numpy as np
 
 model = "DynamicGCN"
 model = "GravNetConv"
+model = "combined_model2"
+# model = "combined_model"
 # df = pd.read_csv("/work/submit/cfalor/upuppi/z_reg/results/finalcsv.txt")
 df = pd.read_csv("/work/submit/cfalor/upuppi/deepjet-geometric/results/{}.csv".format(model))
 print(df.head())
