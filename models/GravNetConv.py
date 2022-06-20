@@ -6,7 +6,7 @@ from torch_geometric.nn.pool import avg_pool_x
 
 
 class Net(nn.Module):
-    def __init__(self, hidden_dim=16, pfc_input_dim=13, dropout=0.8):
+    def __init__(self, hidden_dim=16, pfc_input_dim=13, dropout=0.2):
         super(Net, self).__init__()
         self.hidden_dim = hidden_dim
         self.dropout = dropout

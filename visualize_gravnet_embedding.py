@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from sklearn.decomposition import PCA
 
-from models.model import Net
+from models.modelv2 import Net
 import torch
 from upuppi_v0_dataset import UPuppiV0
 from torch_geometric.data import DataLoader
 # random seed
 np.random.seed(0)
-torch.manual_seed(0)
+torch.manual_seed(42)
 
 def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
@@ -96,6 +96,9 @@ if __name__ == '__main__':
     model = "GravNetConv"
     model = "combined_model"
     # model = "combined_model2"
+    model = "modelv2"
+    # model = "modelv3"
+    # model = "Dynamic_GATv2"
     test_loader = DataLoader(data_test, batch_size=1, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
@@ -115,5 +118,5 @@ if __name__ == '__main__':
         # visualize the embeddings
         visualize_embeddings(pfc_embeddings.cpu().numpy(), vtx_embeddings.cpu().numpy(), pfc_truth, vtx_truth, '{}_embeddings.png'.format(model))
         # distinguish neutral and charged embeddings
-        distinguish_neutral_charged_embeddings(pfc_embeddings.cpu().numpy(), pfc_truth, 'vis_nc_emb{}.png'.format(epoch_num), data.x_pfc)
+        distinguish_neutral_charged_embeddings(pfc_embeddings.cpu().numpy(), pfc_truth, 'vis_nc_emb{}_{}.png'.format(model, epoch_num), data.x_pfc)
 

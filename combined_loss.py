@@ -1,3 +1,5 @@
+# pyright: reportMissingModuleSource=false
+
 import time
 import sklearn
 import numpy as np
@@ -8,11 +10,11 @@ from torch_geometric.data import DataLoader
 import os
 import torch
 from torch import nn
-from models.Dynamic_GATv2 import Net
+from models.modelv3 import Net
 from tqdm import tqdm
 
 
-BATCHSIZE = 32
+BATCHSIZE = 64
 start_time = time.time()
 data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train/")
 data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
@@ -25,6 +27,8 @@ test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
 
 model = "combined_model"
 model = "Dynamic_GATv2"
+model = "modelv2"
+model = "modelv3"
 model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 #model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
@@ -36,7 +40,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Using device: ", device, torch.cuda.get_device_name(0))
 
 # create the model
-upuppi = Net().to(device)
+upuppi = Net(hidden_dim=16, pfc_input_dim=13, dropout=0.5, k1=32, k2=8).to(device)
 optimizer = torch.optim.Adam(upuppi.parameters(), lr=0.01)
 
 def embedding_loss(data, pfc_enc, vtx_enc):

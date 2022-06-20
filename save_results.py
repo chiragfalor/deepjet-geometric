@@ -19,6 +19,7 @@ def save_predictions(model, data_loader, model_name):
     """
     upuppi = model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
     print("Using device: ", device, torch.cuda.get_device_name(0))
     upuppi.to(device)
     upuppi.eval()
@@ -79,6 +80,8 @@ def save_predictions(model, data_loader, model_name):
     datadict = {'zpred':zpred, 'ztrue':ztrue, 'px':px, 'py':py, 'eta':eta, 'E':E, 'pid':pid, 'charge':charge, 'zinput':zinput}
     df = pd.DataFrame.from_dict(datadict)
     df.to_csv("/work/submit/cfalor/upuppi/deepjet-geometric/results/{}.csv".format(model_name), index=False)
+    print("Saved predictions to file {}".format("/work/submit/cfalor/upuppi/deepjet-geometric/results/{}.csv".format(model_name)))
+
 
 if __name__ == "__main__":
     BATCHSIZE = 32
@@ -87,13 +90,16 @@ if __name__ == "__main__":
                             follow_batch=['x_pfc', 'x_vtx'])
 
 
-    epoch_to_load = 9
+    epoch_to_load = 7
     # model = "DynamicGCN"
     # model = "GAT"
     model = "GravNetConv"
     # model = "No_Encode_grav_net"
     model = "combined_model"
     # model = "combined_model2"
+    model = "modelv2"
+    model = "modelv3"
+    model = "Dynamic_GATv2"
     # import DynamicGCN.py or GAT.py in models folder
     if model == "DynamicGCN":
         from models.DynamicGCN import Net
@@ -105,6 +111,12 @@ if __name__ == "__main__":
         from models.No_Encode_grav_net import Net
     elif model == "combined_model2" or model == "combined_model":
         from models.model import Net
+    elif model == "modelv2":
+        from models.modelv2 import Net
+    elif model == "modelv3":
+        from models.modelv3 import Net
+    elif model == "Dynamic_GATv2":
+        from models.Dynamic_GATv2 import Net
     else:
         raise(Exception("Model not found"))
 

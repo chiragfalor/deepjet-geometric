@@ -33,7 +33,12 @@ class Net(nn.Module):
             )
 
             self.conv = DynamicEdgeConv(
-                nn=nn.Sequential(nn.Linear(2*hidden_dim, hidden_dim), nn.LeakyReLU()),
+                nn=nn.Sequential(nn.Linear(2*hidden_dim, hidden_dim//2), nn.LeakyReLU()),
+                k=64, aggr = 'mean'
+            )
+
+            self.conv2 = DynamicEdgeConv(
+                nn=nn.Sequential(nn.Linear(hidden_dim, hidden_dim), nn.LeakyReLU()),
                 k=64, aggr = 'mean'
             )
 
