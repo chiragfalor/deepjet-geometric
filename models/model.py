@@ -34,7 +34,7 @@ class Net(nn.Module):
 
             self.conv = DynamicEdgeConv(
                 nn=nn.Sequential(nn.Linear(2*hidden_dim, hidden_dim), nn.LeakyReLU()),
-                k=64
+                k=64, aggr = 'mean'
             )
 
             self.output = nn.Sequential(
@@ -65,13 +65,15 @@ class Net(nn.Module):
             x_pfc_enc = self.pfc_encode(x_pfc)
             x_vtx_enc = self.vtx_encode(x_vtx)
             #x_glob_enc = self.glob_encode(x_glob)
-
+            # dropout layer
+            x_pfc_enc = F.dropout(x_pfc_enc, p=0.5, training=self.training)
             # create a representation of PFs to clusters
             feats1 = self.conv(x=(x_pfc_enc, x_pfc_enc), batch=(batch_pfc, batch_pfc))
-
             # similarly a representation of PFs-clusters amalgam to PFs
+            # dropout layer
+            feats1 = F.dropout(feats1, p=0.2, training=self.training)
             # get charged PFs
-            charged_idx = torch.nonzero(x_pfc[:,11] != 1).squeeze()
+            charged_idx = torch.nonzero(x_pfc[:,11] != 0).squeeze()
             # select charged PFs in feats1
             charged_feats1 = feats1[charged_idx, :]
             charged_batch = batch[charged_idx]
@@ -80,6 +82,7 @@ class Net(nn.Module):
             combined_batch = torch.cat((batch_vtx, charged_batch), dim=0)
             # feats2 = self.conv(x=(combined_feats, feats1), batch=(combined_batch, batch_pfc))
             feats2 = self.conv(x=(charged_feats1, feats1), batch=(charged_batch, batch_pfc))
+            # feats2 = self.conv(x=(feats1, charged_feats1), batch=(batch_pfc, charged_batch))
             # now to global variables
             #feats3 = self.conv(x=(x_glob_enc, feats2), batch=(batch_pfc, batch_pfc))
 

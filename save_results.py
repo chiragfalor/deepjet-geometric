@@ -87,13 +87,13 @@ if __name__ == "__main__":
                             follow_batch=['x_pfc', 'x_vtx'])
 
 
-    epoch_to_load = 3
+    epoch_to_load = 9
     # model = "DynamicGCN"
     # model = "GAT"
     model = "GravNetConv"
     # model = "No_Encode_grav_net"
     model = "combined_model"
-    model = "combined_model2"
+    # model = "combined_model2"
     # import DynamicGCN.py or GAT.py in models folder
     if model == "DynamicGCN":
         from models.DynamicGCN import Net

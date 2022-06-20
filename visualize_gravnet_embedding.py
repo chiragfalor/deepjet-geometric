@@ -94,12 +94,13 @@ if __name__ == '__main__':
     data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
     model = "embedding_model"
     model = "GravNetConv"
-    model = "combined_model2"
+    model = "combined_model"
+    # model = "combined_model2"
     test_loader = DataLoader(data_test, batch_size=1, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 3
+    epoch_num = 9
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     net = Net()
     net.load_state_dict(upuppi_state_dict)
