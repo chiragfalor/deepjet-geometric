@@ -16,7 +16,7 @@ class Net(nn.Module):
             nn.Linear(hidden_dim//2, hidden_dim)
         )
         self.pfc_encode = nn.Sequential(
-            nn.Linear(13, hidden_dim),
+            nn.Linear(pfc_input_dim, hidden_dim),
             nn.SiLU(),
             nn.Linear(hidden_dim, hidden_dim)
         )

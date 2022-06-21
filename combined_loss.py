@@ -10,7 +10,7 @@ from torch_geometric.data import DataLoader
 import os
 import torch
 from torch import nn
-from models.modelv3 import Net
+from models.modelv2 import Net
 from tqdm import tqdm
 
 
@@ -18,6 +18,9 @@ BATCHSIZE = 64
 start_time = time.time()
 data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train/")
 data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
+
+data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train2/")
+data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
 
 
 train_loader = DataLoader(data_train, batch_size=BATCHSIZE, shuffle=True,
@@ -28,7 +31,7 @@ test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
 model = "combined_model"
 model = "Dynamic_GATv2"
 model = "modelv2"
-model = "modelv3"
+# model = "modelv3"
 model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 #model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
@@ -40,7 +43,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Using device: ", device, torch.cuda.get_device_name(0))
 
 # create the model
-upuppi = Net(hidden_dim=16, pfc_input_dim=13, dropout=0.5, k1=32, k2=8).to(device)
+upuppi = Net(pfc_input_dim=12).to(device)
 optimizer = torch.optim.Adam(upuppi.parameters(), lr=0.01)
 
 def embedding_loss(data, pfc_enc, vtx_enc):
@@ -97,7 +100,7 @@ def train(c_ratio=0.05, neutral_ratio=1):
         optimizer.zero_grad()
         out, batch, pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
         if c_ratio > 0:
-            emb_loss = embedding_loss(data, pfc_enc, vtx_enc)
+            emb_loss = (1/40000)*embedding_loss(data, pfc_enc, vtx_enc)
         else:
             emb_loss = 0
         if neutral_ratio > 1:
@@ -136,18 +139,19 @@ def test():
         data = data.to(device)
         optimizer.zero_grad()
         out, batch, pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
-        regression_loss = nn.MSELoss()(out.squeeze(), data.y)
+        regression_loss = euclidean_loss(out.squeeze(), data.y)
         loss = regression_loss
         total_loss += loss.item()
     total_loss = total_loss / counter        
     return total_loss
 
 # train the model
+NUM_EPOCHS = 20
 
-for epoch in range(10):
+for epoch in range(1, NUM_EPOCHS+1): 
     loss = 0
     test_loss = 0
-    if epoch % 2 == 0:
+    if epoch % 2 == 1:
         c_ratio = 0.05
     else:
         c_ratio=0

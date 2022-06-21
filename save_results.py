@@ -19,7 +19,7 @@ def save_predictions(model, data_loader, model_name):
     """
     upuppi = model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = torch.device('cpu')
+    # device = torch.device('cpu')
     print("Using device: ", device, torch.cuda.get_device_name(0))
     upuppi.to(device)
     upuppi.eval()
@@ -61,7 +61,7 @@ def save_predictions(model, data_loader, model_name):
                 # convert pid from one hot to int
                 pid = np.argmax(data.x_pfc[:,4:11].cpu().numpy(), axis=1)
                 charge = data.x_pfc[:,11].cpu().numpy()
-                zinput = data.x_pfc[:,12].cpu().numpy()
+                # zinput = data.x_pfc[:,12].cpu().numpy()
             else:
                 zpred = np.concatenate((zpred, out[0][:,0].cpu().numpy()), axis=0)
                 ztrue = np.concatenate((ztrue, data.y.cpu().numpy()), axis=0)
@@ -72,7 +72,7 @@ def save_predictions(model, data_loader, model_name):
                 # convert pid from one hot to int
                 pid = np.concatenate((pid, np.argmax(data.x_pfc[:,4:11].cpu().numpy(), axis=1)), axis=0)
                 charge = np.concatenate((charge, data.x_pfc[:,11].cpu().numpy()), axis=0)
-                zinput = np.concatenate((zinput, data.x_pfc[:,12].cpu().numpy()), axis=0)
+                # zinput = np.concatenate((zinput, data.x_pfc[:,12].cpu().numpy()), axis=0)
 
         
     print("Total testing loss: {}".format(total_loss/(counter*BATCHSIZE)))  
@@ -84,13 +84,13 @@ def save_predictions(model, data_loader, model_name):
 
 
 if __name__ == "__main__":
-    BATCHSIZE = 32
-    data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
+    BATCHSIZE = 64
+    data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
     test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
                             follow_batch=['x_pfc', 'x_vtx'])
 
 
-    epoch_to_load = 7
+    epoch_to_load = 4
     # model = "DynamicGCN"
     # model = "GAT"
     model = "GravNetConv"
@@ -98,9 +98,8 @@ if __name__ == "__main__":
     model = "combined_model"
     # model = "combined_model2"
     model = "modelv2"
-    model = "modelv3"
-    model = "Dynamic_GATv2"
-    # import DynamicGCN.py or GAT.py in models folder
+    # model = "modelv3"
+    # model = "Dynamic_GATv2"
     if model == "DynamicGCN":
         from models.DynamicGCN import Net
     elif model == "GAT":
@@ -120,7 +119,7 @@ if __name__ == "__main__":
     else:
         raise(Exception("Model not found"))
 
-    upuppi = Net()
+    upuppi = Net(pfc_input_dim=12)
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
     model_loc = os.path.join(model_dir, 'epoch-{}.pt'.format(epoch_to_load))
     print("Saving predictions of model {}".format(model), "at epoch {}".format(epoch_to_load))

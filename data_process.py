@@ -10,7 +10,7 @@ from tqdm import tqdm
 # if __name__ == '__main__':
 #     file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_48.h5", "r")
 #     file_out = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/raw/samples_v0_dijet_48.h5", "w")
-for fileid in range(1, 101):
+for fileid in range(1, 50):
 #     if fileid == 40:
 #         file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_4.h5", "r")
 #         # make a new file to store the processed data
@@ -21,14 +21,15 @@ for fileid in range(1, 101):
     #     file_out = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/test/raw/samples_v0_dijet_5.h5", "w")
 #     else:
     try:
-        file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_"+str(fileid)+".h5", "r")
-        file_out = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/train/raw/samples_v0_dijet_"+str(fileid)+".h5", "w")
+        # file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_"+str(fileid)+".h5", "r")
+        file = h5py.File("/work/submit/bmaier/upuppi/data/v0_z_regression_pu30/train/raw/samples_v0_dijet_"+str(fileid)+".h5", "r")
+        file_out = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/train2/raw/samples_v0_dijet_"+str(fileid)+".h5", "w")
     except:
         print("fileid:", fileid)
         continue
     # copy the header from the original file
     for key in file.keys():
-        if key == "vtx" or key == "z" or key == "truth":
+        if key == "vtx" or key == "truth":
             file_out.create_dataset(key, data=file[key][:])
         elif key=="n":
             # it is the number of events, scalar
@@ -71,14 +72,26 @@ for fileid in range(1, 101):
         phi = pfs[:,:,2]
         px = pt * np.cos(phi)
         py = pt * np.sin(phi)
+        x = np.cos(phi)
+        y = np.sin(phi)
 
+        z = pfs[:,:,6]
+        # normalize the z-position
+        z = z / 200
+
+        
+        # pt, eta, phi, E, pid, charge, z-position for pfs
         # save the processed data in pfs
-        new_pfs = np.concatenate((px[:,:,np.newaxis], py[:,:,np.newaxis], pfs[:,:,1:2], pfs[:,:,3:4], pid, pfs[:,:,5:7]), axis=2)
+        new_pfs = np.concatenate((x[:,:,np.newaxis], y[:,:,np.newaxis], pfs[:,:,1:2], z[:,:,np.newaxis], pid, pfs[:,:,5:6]), axis=2)
+        # cos(phi), sin(phi), eta, z, pid, charge for pfs
         # print out the shape of the data
         print("new_pfs shape:", new_pfs.shape)
+        ztrue = f["truth"][:]
+        ztrue = ztrue / 200
 
     # save the processed data in the file
     file_out.create_dataset("pfs", data=new_pfs)
+    file_out.create_dataset("z", data=ztrue)
 
 
     # save the file

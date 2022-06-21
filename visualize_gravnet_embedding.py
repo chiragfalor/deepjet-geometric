@@ -91,7 +91,7 @@ def distinguish_neutral_charged_embeddings(pfc_embeddings, pfc_truth, save_path,
 if __name__ == '__main__':
     # test visualize_embeddings
     # load the model
-    data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
+    data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
     model = "embedding_model"
     model = "GravNetConv"
     model = "combined_model"
@@ -103,9 +103,9 @@ if __name__ == '__main__':
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 9
+    epoch_num = 16
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
-    net = Net()
+    net = Net(pfc_input_dim=12)
     net.load_state_dict(upuppi_state_dict)
     net.eval()
     with torch.no_grad():

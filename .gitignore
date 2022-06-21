@@ -24,6 +24,8 @@ lib/
 train/
 test/
 val/
+train2/
+test2/
 lib64/
 parts/
 sdist/

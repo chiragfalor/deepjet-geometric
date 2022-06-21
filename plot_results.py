@@ -10,8 +10,8 @@ model = "GravNetConv"
 model = "combined_model2"
 model = "combined_model"
 model = "modelv2"
-model = "modelv3"
-model = "Dynamic_GATv2"
+# model = "modelv3"
+# model = "Dynamic_GATv2"
 # df = pd.read_csv("/work/submit/cfalor/upuppi/z_reg/results/finalcsv.txt")
 df = pd.read_csv("/work/submit/cfalor/upuppi/deepjet-geometric/results/{}.csv".format(model))
 print(df.head())
