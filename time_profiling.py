@@ -10,8 +10,10 @@ from torch_geometric.data import DataLoader
 import os
 import torch
 from torch import nn
-from models.modelv2 import Net
+from models.modelv4 import Net
 from tqdm import tqdm
+import cProfile
+import re
 
 
 BATCHSIZE = 64
@@ -32,6 +34,7 @@ model = "combined_model"
 model = "Dynamic_GATv2"
 model = "modelv2"
 # model = "modelv3"
+model = "modelv4"
 model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 #model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
@@ -90,19 +93,24 @@ def embedding_loss(data, pfc_enc, vtx_enc):
 
 
 
-def train(c_ratio=0.05, neutral_ratio=1):
+def train(c_ratio=0.05, neutral_ratio=2):
     upuppi.train()
     counter = 0
     total_loss = 0
     for data in tqdm(train_loader):
+        start_time = time.time()
+        time_list = []
         counter += 1
-        data = data.to(device) 
+        data = data.to(device)
+        time_list.append(time.time() - start_time) 
         optimizer.zero_grad()
         out, batch, pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
+        time_list.append(time.time() - start_time)
         if c_ratio > 0:
-            emb_loss = (1/200)*embedding_loss(data, pfc_enc, vtx_enc)
+            emb_loss = (1/40000)*embedding_loss(data, pfc_enc, vtx_enc)
         else:
             emb_loss = 0
+        time_list.append(time.time() - start_time)
         if neutral_ratio > 1:
             # calculate neutral loss
             neutral_indices = torch.nonzero(data.x_pfc[:, 11] == 0).squeeze()
@@ -115,15 +123,21 @@ def train(c_ratio=0.05, neutral_ratio=1):
             charged_y = data.y[charged_indices]
             charged_loss = nn.MSELoss()(charged_out, charged_y)
             # calculate total loss
-            regression_loss = 200*(neutral_ratio*neutral_loss + charged_loss)/(neutral_ratio + 1)
+            regression_loss = 100*(neutral_ratio*neutral_loss + charged_loss)/(neutral_ratio + 1)
         else:
-            regression_loss = 200*nn.MSELoss()(out.squeeze(), data.y)
+            regression_loss = 100*nn.MSELoss()(out.squeeze(), data.y)
+        time_list.append(time.time() - start_time)
         if counter % 50 == 0:
             print("Regression loss: ", regression_loss.item(), " Embedding loss: ", emb_loss)
         loss = (c_ratio*emb_loss) + (1-c_ratio)*regression_loss
+        time_list.append(time.time() - start_time)
         loss.backward()
+        time_list.append(time.time() - start_time)
         optimizer.step()
+        time_list.append(time.time() - start_time)
         total_loss += loss.item()
+        print("Time: ", time_list)
+        break
     total_loss = total_loss / counter        
     return total_loss
 
@@ -148,23 +162,12 @@ def test():
 # train the model
 NUM_EPOCHS = 20
 
-for epoch in range(1, NUM_EPOCHS+1): 
-    loss = 0
-    test_loss = 0
-    if epoch % 2 == 1:
-        c_ratio = 0.05
-    else:
-        c_ratio=0
-    loss = train(c_ratio=c_ratio, neutral_ratio=2*epoch-1)
-    state_dicts = {'model':upuppi.state_dict(),
-                   'opt':optimizer.state_dict()} 
+loss = 0
+test_loss = 0
+loss = train()
 
-    torch.save(state_dicts, os.path.join(model_dir, 'epoch-{}.pt'.format(epoch)))
-    print("Model saved")
-    print("Time elapsed: ", time.time() - start_time)
-    print("-----------------------------------------------------")
-    # test_loss = test()
-    print("Epoch: ", epoch, " Loss: ", loss)
+# loss = train(c_ratio=c_ratio, neutral_ratio=2*epoch+1)
+
 
     
 

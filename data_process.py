@@ -10,7 +10,7 @@ from tqdm import tqdm
 # if __name__ == '__main__':
 #     file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_48.h5", "r")
 #     file_out = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/raw/samples_v0_dijet_48.h5", "w")
-for fileid in range(1, 50):
+for fileid in range(1, 51):
 #     if fileid == 40:
 #         file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_4.h5", "r")
 #         # make a new file to store the processed data
@@ -82,11 +82,11 @@ for fileid in range(1, 50):
         
         # pt, eta, phi, E, pid, charge, z-position for pfs
         # save the processed data in pfs
-        new_pfs = np.concatenate((x[:,:,np.newaxis], y[:,:,np.newaxis], pfs[:,:,1:2], z[:,:,np.newaxis], pid, pfs[:,:,5:6]), axis=2)
-        # cos(phi), sin(phi), eta, z, pid, charge for pfs
+        new_pfs = np.concatenate((pfs[:,:,1:2], x[:,:,np.newaxis], y[:,:,np.newaxis], z[:,:,np.newaxis], pid, pfs[:,:,5:6]), axis=2)
+        # eta, cos(phi), sin(phi), z, pid, charge for pfs
         # print out the shape of the data
         print("new_pfs shape:", new_pfs.shape)
-        ztrue = f["truth"][:]
+        ztrue = f["z"][:]
         ztrue = ztrue / 200
 
     # save the processed data in the file
@@ -99,7 +99,6 @@ for fileid in range(1, 50):
 
     # close the original file
     file.close()
-    # clean up
 
   
     

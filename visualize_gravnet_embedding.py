@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from sklearn.decomposition import PCA
 
-from models.modelv2 import Net
 import torch
 from upuppi_v0_dataset import UPuppiV0
 from torch_geometric.data import DataLoader
@@ -43,7 +42,7 @@ def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, s
     # the color of vertices is index
     # add colorbar
     # save the plot
-    plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}'.format(save_path))
+    plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}'.format(save_path), bbox_inches='tight')
     plt.close()
 
 
@@ -85,7 +84,7 @@ def distinguish_neutral_charged_embeddings(pfc_embeddings, pfc_truth, save_path,
     # the color of vertices is index
     # ax.scatter(vtx_embeddings_2d[:, 0], vtx_embeddings_2d[:, 1], c=np.arange(vtx_embeddings_2d.shape[0]), cmap=cm.get_cmap('jet', 10), marker='*', s=100)
     # save the plot
-    plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}'.format(save_path))
+    plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}'.format(save_path), bbox_inches='tight')
     plt.close()
 
 if __name__ == '__main__':
@@ -94,29 +93,47 @@ if __name__ == '__main__':
     data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
     model = "embedding_model"
     model = "GravNetConv"
-    model = "combined_model"
+    # model = "combined_model"
     # model = "combined_model2"
     model = "modelv2"
     # model = "modelv3"
     # model = "Dynamic_GATv2"
+    if model == "DynamicGCN":
+        from models.DynamicGCN import Net
+    elif model == "GAT":
+        from models.GAT import Net
+    elif model == "GravNetConv":
+        from models.GravNetConv import Net
+    elif model == "No_Encode_grav_net":
+        from models.No_Encode_grav_net import Net
+    elif model == "combined_model2" or model == "combined_model":
+        from models.model import Net
+    elif model == "modelv2":
+        from models.modelv2 import Net
+    elif model == "modelv3":
+        from models.modelv3 import Net
+    elif model == "Dynamic_GATv2":
+        from models.Dynamic_GATv2 import Net
+    else:
+        raise(Exception("Model not found"))
+
     test_loader = DataLoader(data_test, batch_size=1, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 16
+    epoch_num = 6
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     net = Net(pfc_input_dim=12)
     net.load_state_dict(upuppi_state_dict)
-    net.eval()
+    net.eval() 
     with torch.no_grad():
         data = next(iter(test_loader))
-        # x_pfc = data.x_pfc.view(1, -1)
-        # x_vtx = data.x_vtx.view(1, -1)
         pfc_truth = data.y.detach().numpy()
         vtx_truth = data.x_vtx[:, 2].detach().numpy()
         out, batch, pfc_embeddings, vtx_embeddings = net(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
+        # out, batch, pfc_embeddings = net(data.x_pfc, data.x_pfc_batch)
         # visualize the embeddings
-        visualize_embeddings(pfc_embeddings.cpu().numpy(), vtx_embeddings.cpu().numpy(), pfc_truth, vtx_truth, '{}_embeddings.png'.format(model))
+        visualize_embeddings(pfc_embeddings.cpu().numpy(), vtx_embeddings.cpu().numpy(), pfc_truth, vtx_truth, '{}_{}_embeddings.png'.format(model, epoch_num))
         # distinguish neutral and charged embeddings
-        distinguish_neutral_charged_embeddings(pfc_embeddings.cpu().numpy(), pfc_truth, 'vis_nc_emb{}_{}.png'.format(model, epoch_num), data.x_pfc)
+        distinguish_neutral_charged_embeddings(pfc_embeddings.cpu().numpy(), pfc_truth, 'vis_nc_emb_{}_{}.png'.format(model, epoch_num), data.x_pfc)
 

@@ -42,9 +42,16 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # print the device used
 print("Using device: ", device, torch.cuda.get_device_name(0))
 
-# create the model
+epoch_to_load = 18
 upuppi = Net(pfc_input_dim=12).to(device)
 optimizer = torch.optim.Adam(upuppi.parameters(), lr=0.01)
+model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
+model_loc = os.path.join(model_dir, 'epoch-{}.pt'.format(epoch_to_load))
+state_dicts = torch.load(model_loc)
+upuppi_state_dict = state_dicts['model']
+upuppi.load_state_dict(upuppi_state_dict)    
+print("Model loaded from {}".format(model_loc))
+
 
 def embedding_loss(data, pfc_enc, vtx_enc):
     total_pfc_loss = 0
@@ -88,8 +95,6 @@ def embedding_loss(data, pfc_enc, vtx_enc):
 
 
 
-
-
 def train(c_ratio=0.05, neutral_ratio=1):
     upuppi.train()
     counter = 0
@@ -100,7 +105,7 @@ def train(c_ratio=0.05, neutral_ratio=1):
         optimizer.zero_grad()
         out, batch, pfc_enc, vtx_enc = upuppi(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
         if c_ratio > 0:
-            emb_loss = (1/200)*embedding_loss(data, pfc_enc, vtx_enc)
+            emb_loss = (1/40000)*embedding_loss(data, pfc_enc, vtx_enc)
         else:
             emb_loss = 0
         if neutral_ratio > 1:
@@ -115,9 +120,9 @@ def train(c_ratio=0.05, neutral_ratio=1):
             charged_y = data.y[charged_indices]
             charged_loss = nn.MSELoss()(charged_out, charged_y)
             # calculate total loss
-            regression_loss = 200*(neutral_ratio*neutral_loss + charged_loss)/(neutral_ratio + 1)
+            regression_loss = 1000*(neutral_ratio*neutral_loss + charged_loss)/(neutral_ratio + 1)
         else:
-            regression_loss = 200*nn.MSELoss()(out.squeeze(), data.y)
+            regression_loss = 1000*nn.MSELoss()(out.squeeze(), data.y)
         if counter % 50 == 0:
             print("Regression loss: ", regression_loss.item(), " Embedding loss: ", emb_loss)
         loss = (c_ratio*emb_loss) + (1-c_ratio)*regression_loss
@@ -146,16 +151,16 @@ def test():
     return total_loss
 
 # train the model
-NUM_EPOCHS = 20
+NUM_EPOCHS = 5
 
-for epoch in range(1, NUM_EPOCHS+1): 
+for epoch in range(epoch_to_load+1, NUM_EPOCHS+epoch_to_load+1): 
     loss = 0
     test_loss = 0
     if epoch % 2 == 1:
         c_ratio = 0.05
     else:
         c_ratio=0
-    loss = train(c_ratio=c_ratio, neutral_ratio=2*epoch-1)
+    loss = train(c_ratio=c_ratio, neutral_ratio=epoch-17+1)
     state_dicts = {'model':upuppi.state_dict(),
                    'opt':optimizer.state_dict()} 
 

@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 # import seaborn as sns
 
-model = "DynamicGCN"
+# model = "DynamicGCN"
 model = "GravNetConv"
-model = "combined_model2"
-model = "combined_model"
+# model = "combined_model2"
+# model = "combined_model"
 model = "modelv2"
 # model = "modelv3"
 # model = "Dynamic_GATv2"
@@ -21,7 +21,7 @@ print(df.head())
 # 2. z-prediction vs. input_pt
 # 3. z-prediction vs. input_eta
 # on the same figure
-fig, axs = plt.subplots(3, 1, figsize=(10,25))
+fig, axs = plt.subplots(3, 1, figsize=(10,20))
 
 
 # plot a color plot of zpred vs ztrue across the whole dataset
@@ -45,6 +45,6 @@ axs[2].set_xlabel('ztrue')
 axs[2].set_ylabel('zpred')
 axs[2].set_title('zpred vs ztrue for particles with input_charge != 0') 
 
-plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}_zpred_vs_ztrue.png'.format(model))
+plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}_zpred_vs_ztrue.png'.format(model), bbox_inches='tight')
 plt.close()
 

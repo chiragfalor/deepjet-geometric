@@ -13,8 +13,8 @@ import os
 
 BATCHSIZE = 32
 start_time = time.time()
-data_train = UPuppiV0("/work/submit/cfalor/upuppi/z_reg/train/")
-data_test = UPuppiV0("/work/submit/cfalor/upuppi/z_reg/test/")
+data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train2/")
+data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
 # data_train = UPuppiV0("/work/submit/bmaier/upuppi/data/v0_z_regression/train/")
 # data_test = UPuppiV0("/work/submit/bmaier/upuppi/data/v0_z_regression/test/")
 #data_train = UPuppiV0("/home/yfeng/UltimatePuppi/deepjet-geometric/data/train/")
