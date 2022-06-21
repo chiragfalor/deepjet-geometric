@@ -10,11 +10,12 @@ from models.model import Net
 from upuppi_v0_dataset import UPuppiV0
 from torch_geometric.data import DataLoader
 import os
+from tqdm import tqdm
 
-BATCHSIZE = 32
+BATCHSIZE = 64
 start_time = time.time()
-data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train2/")
-data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
+data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train/")
+data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
 # data_train = UPuppiV0("/work/submit/bmaier/upuppi/data/v0_z_regression/train/")
 # data_test = UPuppiV0("/work/submit/bmaier/upuppi/data/v0_z_regression/test/")
 #data_train = UPuppiV0("/home/yfeng/UltimatePuppi/deepjet-geometric/data/train/")
@@ -45,9 +46,12 @@ print("Training...")
 
 # print 5 random samples from the dataset
 
-for data in data_loader:
-    print(data)
-    print(data.x_pfc.shape)
-    print(data.x_vtx)
-    print(data.y)
-    break
+for batch_idx, data in enumerate(tqdm(data_loader)):
+    # print(data)
+    # print(data.x_pfc.shape)
+    # print(data.x_vtx)
+    # print(data.x_pfc_batch)
+    # print(data.y)
+    # print(batch_idx)
+    if batch_idx == 5:
+        break

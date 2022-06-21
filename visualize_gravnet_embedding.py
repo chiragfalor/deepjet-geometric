@@ -53,7 +53,6 @@ def distinguish_neutral_charged_embeddings(pfc_embeddings, pfc_truth, save_path,
     # save the plot to save_path
     '''
     pfc_embeddings: (N, embedding_dim)
-    vtx_embeddings: (m, embedding_dim)
     pfc_truth: (N)
     save_path: string
     return: None
