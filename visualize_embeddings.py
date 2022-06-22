@@ -11,7 +11,7 @@ from torch_geometric.data import DataLoader
 
 # random seed
 np.random.seed(0)
-torch.manual_seed(12)
+torch.manual_seed(11)
 
 def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
@@ -38,11 +38,10 @@ def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, s
     # plot the particles
     
     plt.scatter(pfc_embeddings_2d[:, 0], pfc_embeddings_2d[:, 1], c=pfc_truth, cmap=cm.get_cmap('jet'), s=10)
-    
+    cbar = plt.colorbar()
     # plot the vertices
     plt.scatter(vtx_embeddings_2d[:, 0], vtx_embeddings_2d[:, 1], c=vtx_truth, marker='*', s=100,  cmap=cm.get_cmap('rainbow'))
     cbar = plt.colorbar()
-    # the color of vertices is index
     # add colorbar
     # save the plot
     plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}'.format(save_path))
@@ -62,11 +61,11 @@ if __name__ == '__main__':
     data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
     model = "embedding_model"
     model = "contrastive_loss"
-    test_loader = DataLoader(data_test, batch_size=1, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
+    test_loader = DataLoader(data_test, batch_size=16, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 7
+    epoch_num = 19
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     net = Net()
     net.load_state_dict(upuppi_state_dict)

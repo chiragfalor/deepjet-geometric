@@ -7,7 +7,7 @@ from torch.nn import Sequential, Linear
 
 
 class Net(nn.Module):
-    def __init__(self, hidden_dim = 32, pfc_input_dim = 13, dropout = 0.8):
+    def __init__(self, hidden_dim = 16, pfc_input_dim = 13, dropout = 0.5):
         super(Net, self).__init__()
         
         
@@ -18,7 +18,10 @@ class Net(nn.Module):
             nn.Linear(hidden_dim//2, hidden_dim),
             nn.SiLU(),
             nn.Dropout(p=dropout),
-            nn.Linear(hidden_dim, hidden_dim)
+            nn.Linear(hidden_dim, 2*hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(p=dropout),
+            nn.Linear(2*hidden_dim, hidden_dim)
         )
 
 
