@@ -7,7 +7,7 @@ from models.embedding_model import Net
 from tqdm import tqdm
 
 
-BATCHSIZE = 32
+BATCHSIZE = 1
 start_time = time.time()
 print("Training...")
 data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train/")
@@ -33,7 +33,7 @@ net = Net().to(device)
 optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
 
 
-def contrastive_loss(pfc_enc, vtx_id, num_pfc=128, c=1.0):
+def contrastive_loss(pfc_enc, vtx_id, num_pfc=128, c=1.0, print_bool=False):
     '''
     Calculate the contrastive loss
     input:
@@ -45,16 +45,34 @@ def contrastive_loss(pfc_enc, vtx_id, num_pfc=128, c=1.0):
     # loss which encourages the embedding of same particles to be close and different particles to be far
     # randomly select a set of particles to be used for contrastive loss
     random_perm = torch.randperm(len(pfc_enc))
+    if len(pfc_enc) < 2*num_pfc:
+        num_pfc = len(pfc_enc)//2
+        # print(len(pfc_enc))
     random_indices1 = random_perm[:num_pfc]
     random_indices2 = random_perm[num_pfc:2*num_pfc]
     pfc_enc_1 = pfc_enc[random_indices1, :]
     pfc_enc_2 = pfc_enc[random_indices2, :]
     vtx_id_1 = vtx_id[random_indices1]
     vtx_id_2 = vtx_id[random_indices2]
-    # get a mask which is 1 if the particles are the same and -1 if they are different
+    # get a mask which is c if the particles are the same and -1 if they are different
     mask = -1+(c+1)*(vtx_id_1 == vtx_id_2).float()
     euclidean_dist = F.pairwise_distance(pfc_enc_1, pfc_enc_2)
     loss = torch.mean(mask*torch.pow(euclidean_dist, 2))
+    # get mean of the particles of the same vertex
+    unique_vtx = torch.unique(vtx_id)
+    mean_vtx = torch.zeros((len(unique_vtx), 32)).to(device)
+    for i, vtx in enumerate(unique_vtx):
+        mean_vtx[i] = torch.mean(pfc_enc[vtx_id == vtx, :], dim=0)
+    # get the mean of the particles of the different vertex
+    mean_vtx_diff = torch.zeros((len(unique_vtx), 32)).to(device)
+    for i, vtx in enumerate(unique_vtx):
+        mean_vtx_diff[i] = torch.mean(pfc_enc[vtx_id != vtx, :], dim=0)
+    # get the distance between the mean of the particles of the same vertex and the mean of the particles of the different vertex
+    euclidean_dist_vtx = F.pairwise_distance(mean_vtx, mean_vtx_diff)
+    loss -= torch.mean(torch.pow(euclidean_dist_vtx, 2))
+    # print both the losses, the loss from particles and the loss from mean of the particles of different vertex
+    if print_bool:
+        print("Contrastive loss: {}, loss from particles: {}, loss from mean of particles of different vertex: {}".format(loss, torch.mean(mask*torch.pow(euclidean_dist, 2)), -torch.mean(torch.pow(euclidean_dist_vtx, 2))))
     return loss
 
 
@@ -69,14 +87,15 @@ def train(reg_ratio = 0.01):
         optimizer.zero_grad()
         pfc_enc = net(data.x_pfc)
         vtx_id = (data.truth != 0).int()
-        loss = contrastive_loss(pfc_enc, vtx_id)
+        loss = contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=10)
         loss += reg_ratio*((torch.norm(pfc_enc, p=2, dim=1)/10)**4).mean()
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
-        if counter % 100 == 1:
+        if counter % 1000 == 1:
             print("Counter: {}, Average Loss: {}".format(counter, train_loss/counter))
             print("Regression loss: {}".format(((torch.norm(pfc_enc, p=2, dim=1)/10)**4).mean()))
+            loss = contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=10, print_bool=True)
     train_loss = train_loss/counter
     return train_loss
 

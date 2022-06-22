@@ -11,7 +11,7 @@ from torch_geometric.data import DataLoader
 
 # random seed
 np.random.seed(0)
-torch.manual_seed(23)
+torch.manual_seed(12)
 
 def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
@@ -38,9 +38,10 @@ def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, s
     # plot the particles
     
     plt.scatter(pfc_embeddings_2d[:, 0], pfc_embeddings_2d[:, 1], c=pfc_truth, cmap=cm.get_cmap('jet'), s=10)
-    cbar = plt.colorbar()
+    
     # plot the vertices
-    plt.scatter(vtx_embeddings_2d[:, 0], vtx_embeddings_2d[:, 1], c=vtx_truth, cmap=cm.get_cmap('jet'), marker='*', s=100)
+    plt.scatter(vtx_embeddings_2d[:, 0], vtx_embeddings_2d[:, 1], c=vtx_truth, marker='*', s=100,  cmap=cm.get_cmap('rainbow'))
+    cbar = plt.colorbar()
     # the color of vertices is index
     # add colorbar
     # save the plot
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 6
+    epoch_num = 7
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     net = Net()
     net.load_state_dict(upuppi_state_dict)
