@@ -33,7 +33,7 @@ net = Net().to(device)
 optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
 
 
-def contrastive_loss(pfc_enc, vtx_id, num_pfc=128, c=1.0, print_bool=False):
+def contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=1.0, print_bool=False):
     '''
     Calculate the contrastive loss
     input:
@@ -62,7 +62,7 @@ def contrastive_loss(pfc_enc, vtx_id, num_pfc=128, c=1.0, print_bool=False):
         print("Contrastive loss: {}, loss from particles: {}".format(loss, torch.mean(mask*torch.pow(euclidean_dist, 2))))
     return loss
 
-def contrastive_loss_v2(pfc_enc, vtx_id, c=1.0, print_bool=False):
+def contrastive_loss_v2(pfc_enc, vtx_id, c=0.5, print_bool=False):
     unique_vtx = torch.unique(vtx_id)
     mean_vtx = torch.zeros((len(unique_vtx), pfc_enc.shape[1])).to(device)
     for i, vtx in enumerate(unique_vtx):
@@ -90,21 +90,27 @@ def contrastive_loss_v2(pfc_enc, vtx_id, c=1.0, print_bool=False):
 
 
 
-def train(reg_ratio = 0.01):
+def train(reg_ratio = 0.01, neutral_weight = 1):
     net.train()
+    loss_fn = contrastive_loss_v2
     train_loss = 0
     for counter, data in enumerate(tqdm(train_loader)):
         data = data.to(device)
         optimizer.zero_grad()
         pfc_enc = net(data.x_pfc)
         vtx_id = (data.truth != 0).int()
-        loss = contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=0.1, print_bool=False)
-        loss = contrastive_loss_v2(pfc_enc, vtx_id, c=0.1, print_bool=False)
+        if neutral_weight != 1:
+            charged_idx, neutral_idx = torch.nonzero(data.x_pfc[:,11] != 0).squeeze(), torch.nonzero(data.x_pfc[:,11] == 0).squeeze()
+            charged_embeddings, neutral_embeddings = pfc_enc[charged_idx], pfc_enc[neutral_idx]
+            charged_loss, neutral_loss = loss_fn(charged_embeddings, vtx_id[charged_idx], print_bool=False), loss_fn(neutral_embeddings, vtx_id[neutral_idx], print_bool=False)
+            loss = (charged_loss + neutral_weight*neutral_loss)/(1+neutral_weight)
+        else:
+            loss = loss_fn(pfc_enc, vtx_id, c=0.1, print_bool=False)
         loss += reg_ratio*((torch.norm(pfc_enc, p=2, dim=1)/10)**4).mean()
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
-        if counter % 1000 == 1:
+        if counter % 5000 == 1:
             print("Counter: {}, Average Loss: {}".format(counter, train_loss/counter))
             print("Regression loss: {}".format(((torch.norm(pfc_enc, p=2, dim=1)/10)**4).mean()))
             # loss = contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=0.1, print_bool=True)
@@ -131,7 +137,7 @@ def test():
 for epoch in range(20):
     loss = 0
     test_loss = 0
-    loss = train()
+    loss = train(reg_ratio = 0.01, neutral_weight = epoch+1)
     state_dicts = {'model':net.state_dict(),
                    'opt':optimizer.state_dict()} 
     torch.save(state_dicts, os.path.join(model_dir, 'epoch-{}.pt'.format(epoch)))

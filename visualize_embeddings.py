@@ -65,7 +65,7 @@ if __name__ == '__main__':
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 19
+    epoch_num = 7
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     net = Net()
     net.load_state_dict(upuppi_state_dict)
