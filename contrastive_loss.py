@@ -3,7 +3,8 @@ from upuppi_v0_dataset import UPuppiV0
 from torch_geometric.data import DataLoader
 from torch import nn
 from torch.nn import functional as F
-from models.embedding_model import Net
+# from models.embedding_model import Net
+from models.embedding_GCN import Net
 from tqdm import tqdm
 
 
@@ -14,12 +15,11 @@ data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train/")
 data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
 
 
-train_loader = DataLoader(data_train, batch_size=BATCHSIZE, shuffle=True,
-                          follow_batch=['x_pfc', 'x_vtx'])
-test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
-                         follow_batch=['x_pfc', 'x_vtx'])
+train_loader = DataLoader(data_train, batch_size=BATCHSIZE, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
+test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
 
 model = "contrastive_loss"
+model = "embedding_GCN"
 model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 #model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
@@ -29,7 +29,7 @@ device = torch.device('cpu')
 print("Using device: ", device, torch.cuda.get_device_name(0))
 
 # create the model
-net = Net().to(device)
+net = Net(pfc_input_dim=13).to(device)
 optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
 
 
@@ -97,8 +97,11 @@ def train(reg_ratio = 0.01, neutral_weight = 1):
     for counter, data in enumerate(tqdm(train_loader)):
         data = data.to(device)
         optimizer.zero_grad()
-        pfc_enc = net(data.x_pfc)
         vtx_id = (data.truth != 0).int()
+        # add extra dimension to vtx_id and concat with x_pfc
+        # input_data = torch.cat((data.x_pfc, vtx_id.unsqueeze(1)), dim=1)
+        input_data = data.x_pfc
+        pfc_enc = net(input_data)
         if neutral_weight != 1:
             charged_idx, neutral_idx = torch.nonzero(data.x_pfc[:,11] != 0).squeeze(), torch.nonzero(data.x_pfc[:,11] == 0).squeeze()
             charged_embeddings, neutral_embeddings = pfc_enc[charged_idx], pfc_enc[neutral_idx]
