@@ -20,6 +20,8 @@ test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True, follow_b
 
 model = "contrastive_loss"
 model = "embedding_GCN"
+model = "embedding_GCN_v1"
+model = "embedding_GCN_cheating"
 model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 #model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
@@ -29,7 +31,7 @@ device = torch.device('cpu')
 print("Using device: ", device, torch.cuda.get_device_name(0))
 
 # create the model
-net = Net(pfc_input_dim=13).to(device)
+net = Net(pfc_input_dim=14).to(device)
 optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
 
 
@@ -92,21 +94,22 @@ def contrastive_loss_v2(pfc_enc, vtx_id, c=0.5, print_bool=False):
 
 def train(reg_ratio = 0.01, neutral_weight = 1):
     net.train()
-    loss_fn = contrastive_loss_v2
+    loss_fn = contrastive_loss
     train_loss = 0
     for counter, data in enumerate(tqdm(train_loader)):
         data = data.to(device)
         optimizer.zero_grad()
         vtx_id = (data.truth != 0).int()
-        # add extra dimension to vtx_id and concat with x_pfc
-        # input_data = torch.cat((data.x_pfc, vtx_id.unsqueeze(1)), dim=1)
-        input_data = data.x_pfc
+        # adding in the true vertex id itself to check if model is working
+        input_data = torch.cat((data.x_pfc, vtx_id.unsqueeze(1)), dim=1)
+        # input_data = data.x_pfc
         pfc_enc = net(input_data)
         if neutral_weight != 1:
             charged_idx, neutral_idx = torch.nonzero(data.x_pfc[:,11] != 0).squeeze(), torch.nonzero(data.x_pfc[:,11] == 0).squeeze()
             charged_embeddings, neutral_embeddings = pfc_enc[charged_idx], pfc_enc[neutral_idx]
             charged_loss, neutral_loss = loss_fn(charged_embeddings, vtx_id[charged_idx], print_bool=False), loss_fn(neutral_embeddings, vtx_id[neutral_idx], print_bool=False)
             loss = (charged_loss + neutral_weight*neutral_loss)/(1+neutral_weight)
+            loss += loss_fn(pfc_enc, vtx_id, print_bool=False)
         else:
             loss = loss_fn(pfc_enc, vtx_id, c=0.1, print_bool=False)
         loss += reg_ratio*((torch.norm(pfc_enc, p=2, dim=1)/10)**4).mean()
@@ -132,7 +135,7 @@ def test():
         vtx_id = data.truth
         loss = contrastive_loss(pfc_enc, vtx_id)
         test_loss += loss.item()
-    test_loss = test_loss / counter        
+    test_loss = test_loss / counter
     return test_loss
 
 # train the model

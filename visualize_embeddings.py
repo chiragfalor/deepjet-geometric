@@ -15,14 +15,14 @@ net = Net(pfc_input_dim=13)
 np.random.seed(0)
 torch.manual_seed(11)
 
-def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, save_path):
+def visualize_embeddings(pfc1_embeddings, pfc2_embeddings, pfc1_truth, pfc2_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
     # in 2D space
     # represent particles with dots and vertices with stars
     # save the plot to save_path
     '''
-    pfc_embeddings: (N, embedding_dim)
-    vtx_embeddings: (m, embedding_dim)
+    pfc1_embeddings: (N1, embedding_dim)
+    pfc2_embeddings: (N2, embedding_dim)
     pfc_truth: (N)
     save_path: string
     return: None
@@ -30,21 +30,22 @@ def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, s
     pca = PCA(n_components=2)
     # transform both vertices and particles to 2D space
     # concatenate the embeddings of vertices and particles
-    embeddings = np.concatenate((pfc_embeddings, vtx_embeddings), axis=0)
+    embeddings = np.concatenate((pfc1_embeddings, pfc2_embeddings), axis=0)
     embeddings_2d = pca.fit_transform(embeddings)
     # separate the embeddings of particles and vertices
-    pfc_embeddings_2d = embeddings_2d[:pfc_embeddings.shape[0]]
-    vtx_embeddings_2d = embeddings_2d[pfc_embeddings.shape[0]:]
+    pfc1_embeddings_2d = embeddings_2d[:pfc1_embeddings.shape[0]]
+    pfc2_embeddings_2d = embeddings_2d[pfc1_embeddings.shape[0]:]
     # plot the embeddings
     fig, ax = plt.subplots()
     # plot the particles
     
-    plt.scatter(pfc_embeddings_2d[:, 0], pfc_embeddings_2d[:, 1], c=pfc_truth, cmap=cm.get_cmap('jet'), s=10)
+    plt.scatter(pfc1_embeddings_2d[:, 0], pfc1_embeddings_2d[:, 1], c=pfc1_truth, cmap=cm.get_cmap('jet'), s=10)
     cbar = plt.colorbar()
     # plot the vertices
-    plt.scatter(vtx_embeddings_2d[:, 0], vtx_embeddings_2d[:, 1], c=vtx_truth, marker='*', s=100,  cmap=cm.get_cmap('rainbow'))
+    plt.scatter(pfc2_embeddings_2d[:, 0], pfc2_embeddings_2d[:, 1], c=pfc2_truth, marker='*', s=100,  cmap=cm.get_cmap('rainbow'))
     cbar = plt.colorbar()
-    # add colorbar
+    # add a legend
+    plt.legend(['charged particles', 'neutral particles'])
     # save the plot
     plt.savefig('/work/submit/cfalor/upuppi/deepjet-geometric/results/{}'.format(save_path))
     plt.close()
@@ -64,6 +65,7 @@ if __name__ == '__main__':
     model = "embedding_model"
     model = "contrastive_loss"
     model = "embedding_GCN"
+    model = "embedding_GCN_v1"
     test_loader = DataLoader(data_test, batch_size=16, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
