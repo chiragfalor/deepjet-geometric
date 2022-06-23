@@ -95,6 +95,9 @@ def train(c_ratio=0.05, neutral_ratio=1):
     counter = 0
     total_loss = 0
     for data in tqdm(train_loader):
+        euclidean_loss = nn.MSELoss().to(device)
+        # let euclidean_loss be the L1 loss
+        euclidean_loss = nn.L1Loss().to(device)
         counter += 1
         data = data.to(device) 
         optimizer.zero_grad()
@@ -108,16 +111,16 @@ def train(c_ratio=0.05, neutral_ratio=1):
             neutral_indices = torch.nonzero(data.x_pfc[:, 11] == 0).squeeze()
             neutral_out = out[:,0][neutral_indices]
             neutral_y = data.y[neutral_indices]
-            neutral_loss = nn.MSELoss()(neutral_out, neutral_y)
+            neutral_loss = euclidean_loss(neutral_out, neutral_y)
             # calculate charged loss
             charged_indices = torch.nonzero(data.x_pfc[:,11] != 0).squeeze()
             charged_out = out[:,0][charged_indices]
             charged_y = data.y[charged_indices]
-            charged_loss = nn.MSELoss()(charged_out, charged_y)
+            charged_loss = euclidean_loss(charged_out, charged_y)
             # calculate total loss
             regression_loss = 200*(neutral_ratio*neutral_loss + charged_loss)/(neutral_ratio + 1)
         else:
-            regression_loss = 200*nn.MSELoss()(out.squeeze(), data.y)
+            regression_loss = 200*euclidean_loss(out.squeeze(), data.y)
         if counter % 50 == 0:
             print("Regression loss: ", regression_loss.item(), " Embedding loss: ", emb_loss)
         loss = (c_ratio*emb_loss) + (1-c_ratio)*regression_loss
@@ -152,7 +155,8 @@ for epoch in range(1, NUM_EPOCHS+1):
     loss = 0
     test_loss = 0
     if epoch % 2 == 1:
-        c_ratio = 0.05
+        # c_ratio = 0.05
+        c_ratio = 0.01
     else:
         c_ratio=0
     loss = train(c_ratio=c_ratio, neutral_ratio=2*epoch-1)
