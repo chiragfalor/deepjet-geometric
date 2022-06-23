@@ -33,7 +33,7 @@ print("Using device: ", device, torch.cuda.get_device_name(0))
 
 # create the model
 net = Net(pfc_input_dim=14).to(device)
-optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(net.parameters(), lr=0.0001)
 
 
 def contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=1.0, print_bool=False):
@@ -101,6 +101,8 @@ def process_batch(data):
     x_pfc = data.x_pfc.to(device)
     # normalize z to [-1, 1]
     data.x_pfc[:,12] = data.x_pfc[:,12]/200.0
+    # zero out z
+    data.x_pfc[:,12] = data.x_pfc[:,12]*0.0
     # normalize the true z to [-1, 1]
     data.y = data.y/200.0
     # return the data
@@ -136,6 +138,9 @@ def train(reg_ratio = 0.01, neutral_weight = 1):
         if counter % 5000 == 1:
             print("Counter: {}, Average Loss: {}".format(counter, train_loss/counter))
             print("Regression loss: {}".format(((torch.norm(pfc_enc, p=2, dim=1))**4).mean()))
+            if neutral_weight != 1:
+                print("Charged loss: {}, Neutral loss: {}".format(charged_loss, neutral_loss))
+                print("number of charged particles: {}, number of neutral particles: {}".format(len(charged_idx), len(neutral_idx)))
             # loss = contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=0.1, print_bool=True)
             loss = loss_fn(pfc_enc, vtx_id, c=0.1, print_bool=True)
     train_loss = train_loss/counter

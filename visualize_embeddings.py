@@ -13,7 +13,7 @@ net = Net(pfc_input_dim=14)
 
 # random seed
 np.random.seed(0)
-torch.manual_seed(8)
+torch.manual_seed(11)
 
 def visualize_embeddings(pfc1_embeddings, pfc2_embeddings, pfc1_truth, pfc2_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
@@ -67,11 +67,12 @@ if __name__ == '__main__':
     model = "embedding_GCN"
     model = "embedding_GCN_v1"
     model = "embedding_GCN_cheating"
+    model = "embedding_GCN_cheating_low_lr"
     test_loader = DataLoader(data_test, batch_size=1, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 13
+    epoch_num = 2
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     print(upuppi_state_dict)
     net.load_state_dict(upuppi_state_dict)
