@@ -32,8 +32,8 @@ device = torch.device('cpu')
 print("Using device: ", device, torch.cuda.get_device_name(0))
 
 # create the model
-net = Net(pfc_input_dim=14).to(device)
-optimizer = torch.optim.Adam(net.parameters(), lr=0.0001)
+net = Net(pfc_input_dim=13).to(device)
+optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
 
 
 def contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=1.0, print_bool=False):
@@ -116,11 +116,11 @@ def train(reg_ratio = 0.01, neutral_weight = 1):
     train_loss = 0
     for counter, data in enumerate(tqdm(train_loader)):
         data = data.to(device)
-        data = process_batch(data)
+        # data = process_batch(data)
         optimizer.zero_grad()
         vtx_id = (data.truth != 0).int()
         # adding in the true vertex id itself to check if model is working
-        input_data = torch.cat((data.x_pfc, vtx_id.unsqueeze(1)), dim=1)
+        input_data = torch.cat((data.x_pfc[:,:-1], vtx_id.unsqueeze(1)), dim=1)
         # input_data = data.x_pfc
         pfc_enc = net(input_data)
         if neutral_weight != 1:
@@ -172,7 +172,7 @@ for epoch in range(20):
     print("Model saved at path: {}".format(os.path.join(model_dir, 'epoch-{}.pt'.format(epoch))))
     print("Time elapsed: ", time.time() - start_time)
     print("-----------------------------------------------------")
-    # test_loss = test()
+    test_loss = test()
     print("Epoch: ", epoch, " Loss: ", loss, " Test Loss: ", test_loss)
 
     

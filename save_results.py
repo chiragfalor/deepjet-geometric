@@ -90,7 +90,7 @@ if __name__ == "__main__":
                             follow_batch=['x_pfc', 'x_vtx'])
 
 
-    epoch_to_load = 19
+    epoch_to_load = 18
     # model = "DynamicGCN"
     # model = "GAT"
     model = "GravNetConv"

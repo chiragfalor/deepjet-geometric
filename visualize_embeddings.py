@@ -9,7 +9,7 @@ import torch
 from upuppi_v0_dataset import UPuppiV0
 from torch_geometric.data import DataLoader
 
-net = Net(pfc_input_dim=14)
+net = Net(pfc_input_dim=13)
 
 # random seed
 np.random.seed(0)
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 2
+    epoch_num = 19
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     print(upuppi_state_dict)
     net.load_state_dict(upuppi_state_dict)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         data = next(iter(test_loader))
         # pfc_truth = data.y.detach().numpy()
         pfc_truth = (data.truth != 0).int()
-        data.x_pfc = torch.cat([data.x_pfc, pfc_truth.unsqueeze(1)], dim=1)
+        data.x_pfc = torch.cat([data.x_pfc[:,:-1], pfc_truth.unsqueeze(1)], dim=1)
         # vtx_truth = data.x_vtx[:, 2].detach().numpy()
         # pfc_embeddings, vtx_embeddings = net(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
         pfc_embeddings = net(data.x_pfc)

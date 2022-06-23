@@ -11,7 +11,7 @@ from tqdm import tqdm
 # if __name__ == '__main__':
 #     file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_48.h5", "r")
 #     file_out = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/raw/samples_v0_dijet_48.h5", "w")
-for fileid in range(50, 61):
+for fileid in range(1, 50):
 #     if fileid == 40:
 #         file = h5py.File("/work/submit/cfalor/upuppi/z_reg/train/notr/samples_v0_dijet_4.h5", "r")
 #         # make a new file to store the processed data
@@ -22,8 +22,8 @@ for fileid in range(50, 61):
     #     file_out = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/test/raw/samples_v0_dijet_5.h5", "w")
 #     else:
     try:
-        file = h5py.File("/work/submit/bmaier/upuppi/data/v0_z_regression_pu30/test/raw/samples_v0_dijet_"+str(fileid)+".h5", "r")
-        file_out = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/test2/raw/samples_v0_dijet_"+str(fileid)+".h5", "w")
+        file = h5py.File("/work/submit/bmaier/upuppi/data/v0_z_regression_pu30/train/raw/samples_v0_dijet_"+str(fileid)+".h5", "r")
+        file_out = h5py.File("/work/submit/cfalor/upuppi/deepjet-geometric/train2/raw/samples_v0_dijet_"+str(fileid)+".h5", "w")
     except:
         print("fileid:", fileid)
         continue
@@ -84,7 +84,7 @@ for fileid in range(50, 61):
 
 
         # save the processed data in pfs
-        new_pfs = np.concatenate((px[:,:,np.newaxis], py[:,:,np.newaxis], eta[:,:,np.newaxis], log_E[:,:,np.newaxis], log_pt[:,:,np.newaxis], q[:,:,np.newaxis], pid[:,:,:], z[:,:,np.newaxis]), axis=2)
+        new_pfs = np.concatenate((px[:,:,np.newaxis], py[:,:,np.newaxis], eta[:,:,np.newaxis], log_E[:,:,np.newaxis], log_pt[:,:,np.newaxis], pid[:,:,:], q[:,:,np.newaxis], z[:,:,np.newaxis]), axis=2)
         # new features: px, py, eta, log_E, log_pt, q, pid, z
         # print("new_pfs shape:", new_pfs.shape)
 

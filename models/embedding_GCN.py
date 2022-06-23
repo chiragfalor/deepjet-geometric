@@ -31,7 +31,7 @@ class Net(nn.Module):
     def forward(self, x_pfc):
         x_pfc_enc = self.pfc_encode(x_pfc)
         # concat the truth vertex value
-        x_pfc_enc = torch.cat([x_pfc_enc, x_pfc[:,12:13]], dim=1)
+        x_pfc_enc = torch.cat([x_pfc_enc, x_pfc[:,-1:]], dim=1)
         feats = self.graph_conv(x_pfc_enc)
         feats = self.ffn(feats)
         enc = torch.cat([feats, x_pfc], dim=1)

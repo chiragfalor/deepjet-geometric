@@ -16,11 +16,11 @@ from tqdm import tqdm
 
 BATCHSIZE = 64
 start_time = time.time()
-data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train/")
-data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
+# data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train/")
+# data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
 
-# data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train2/")
-# data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
+data_train = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/train2/")
+data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
 
 
 train_loader = DataLoader(data_train, batch_size=BATCHSIZE, shuffle=True,
@@ -38,7 +38,7 @@ model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(mod
 
 print("Training {}...".format(model))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-# device = torch.device('cpu')
+device = torch.device('cpu')
 # print the device used
 print("Using device: ", device, torch.cuda.get_device_name(0))
 
@@ -155,8 +155,7 @@ for epoch in range(1, NUM_EPOCHS+1):
     loss = 0
     test_loss = 0
     if epoch % 2 == 1:
-        # c_ratio = 0.05
-        c_ratio = 0.01
+        c_ratio = 0.05
     else:
         c_ratio=0
     loss = train(c_ratio=c_ratio, neutral_ratio=2*epoch-1)

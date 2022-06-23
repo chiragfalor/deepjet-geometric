@@ -9,7 +9,7 @@ from upuppi_v0_dataset import UPuppiV0
 from torch_geometric.data import DataLoader
 # random seed
 np.random.seed(0)
-torch.manual_seed(42)
+torch.manual_seed(40)
 
 def visualize_embeddings(pfc_embeddings, vtx_embeddings, pfc_truth, vtx_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
@@ -116,11 +116,11 @@ if __name__ == '__main__':
     else:
         raise(Exception("Model not found"))
 
-    test_loader = DataLoader(data_test, batch_size=1, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
+    test_loader = DataLoader(data_test, batch_size=320, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 19
+    epoch_num = 18
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
     net = Net(pfc_input_dim=13)
     net.load_state_dict(upuppi_state_dict)
@@ -132,6 +132,10 @@ if __name__ == '__main__':
         out, batch, pfc_embeddings, vtx_embeddings = net(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
         # out, batch, pfc_embeddings = net(data.x_pfc, data.x_pfc_batch)
         # visualize the embeddings
+        
+        # neutral_idx = torch.nonzero(data.x_pfc[:,11] == 0).squeeze()
+        # pfc_embeddings = pfc_embeddings[neutral_idx, :]
+        # pfc_truth = pfc_truth[neutral_idx]
         visualize_embeddings(pfc_embeddings.cpu().numpy(), vtx_embeddings.cpu().numpy(), pfc_truth, vtx_truth, '{}_{}_embeddings.png'.format(model, epoch_num))
         # distinguish neutral and charged embeddings
         distinguish_neutral_charged_embeddings(pfc_embeddings.cpu().numpy(), pfc_truth, 'vis_nc_emb_{}_{}.png'.format(model, epoch_num), data.x_pfc)

@@ -162,7 +162,7 @@ def hyperparameter_search():
     NUM_EPOCHS = 5
     # define the best model parameters
     best_hyperparameters = {'c_ratio': 0.05, 'neutral_ratio': 1, 'lr': 0.001, 'hidden_dim': 100, 'dropout': 0,'k1': 1, 'k2': 1, 'optimizer': 'adam','best_loss': 1000000, 'epoch': 0, 'best_model': None}
-    
+    hyperparameter_list = []
 
     for optimizer_type in optimizers:
         for c_ratio in c_ratios:
@@ -193,6 +193,11 @@ def hyperparameter_search():
                                             # test the model
                                             test_loss = test(upuppi)
                                             print("Test loss: ", test_loss)
+                                            hyperparameter_dict = {'c_ratio': c_ratio, 'neutral_ratio': neutral_ratio, 'lr': lr, 'hidden_dim': hidden_dim, 'dropout': dropout, 'k1': k1, 'k2': k2, 'optimizer': optimizer_type, 'loss': test_loss, 'epoch': epoch}
+                                            hyperparameter_list.append(hyperparameter_dict)
+                                            # save the list
+                                            with open('hyperparameter_list.txt', 'w') as f:
+                                                f.write(str(hyperparameter_list))
                                             # check if the model has the best loss
                                             if test_loss < best_hyperparameters['best_loss']:
                                                 # update the best hyperparameters dict
