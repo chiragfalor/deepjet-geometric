@@ -85,12 +85,12 @@ def save_predictions(model, data_loader, model_name):
 
 if __name__ == "__main__":
     BATCHSIZE = 64
-    data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test2/")
+    data_test = UPuppiV0("/work/submit/cfalor/upuppi/deepjet-geometric/test/")
     test_loader = DataLoader(data_test, batch_size=BATCHSIZE, shuffle=True,
                             follow_batch=['x_pfc', 'x_vtx'])
 
 
-    epoch_to_load = 6
+    epoch_to_load = 19
     # model = "DynamicGCN"
     # model = "GAT"
     model = "GravNetConv"
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     else:
         raise(Exception("Model not found"))
 
-    upuppi = Net(pfc_input_dim=12)
+    upuppi = Net(pfc_input_dim=13)
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
     model_loc = os.path.join(model_dir, 'epoch-{}.pt'.format(epoch_to_load))
     print("Saving predictions of model {}".format(model), "at epoch {}".format(epoch_to_load))
