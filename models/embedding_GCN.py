@@ -2,8 +2,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch_geometric.nn.conv import DynamicEdgeConv
-from torch_geometric.nn.pool import avg_pool_x
-from torch.nn import Sequential, Linear
 
 
 class Net(nn.Module):
@@ -18,11 +16,11 @@ class Net(nn.Module):
             nn.Linear(hidden_dim//2, hidden_dim),
             nn.SiLU(),
             nn.Dropout(p=dropout),
-            nn.Linear(hidden_dim, hidden_dim)
+            nn.Linear(hidden_dim, hidden_dim-1)
         )
 
         self.graph_conv = DynamicEdgeConv(nn=nn.Sequential(nn.Linear(2*hidden_dim, hidden_dim), nn.SiLU()),
-                k=40, aggr='mean')
+                k=8, aggr='mean')
         self.ffn = nn.Sequential(
             nn.Linear(hidden_dim, 2*hidden_dim),
             nn.SiLU(),
@@ -32,6 +30,8 @@ class Net(nn.Module):
 
     def forward(self, x_pfc):
         x_pfc_enc = self.pfc_encode(x_pfc)
+        # concat the truth vertex value
+        x_pfc_enc = torch.cat([x_pfc_enc, x_pfc[:,12:13]], dim=1)
         feats = self.graph_conv(x_pfc_enc)
         feats = self.ffn(feats)
         enc = torch.cat([feats, x_pfc], dim=1)

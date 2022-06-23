@@ -22,6 +22,7 @@ model = "contrastive_loss"
 model = "embedding_GCN"
 model = "embedding_GCN_v1"
 model = "embedding_GCN_cheating"
+model = "embedding_GCN_cheating_low_lr"
 model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 #model_dir = '/home/yfeng/UltimatePuppi/deepjet-geometric/models/v0/'
 
@@ -32,7 +33,7 @@ print("Using device: ", device, torch.cuda.get_device_name(0))
 
 # create the model
 net = Net(pfc_input_dim=14).to(device)
-optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
 
 
 def contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=1.0, print_bool=False):
@@ -88,16 +89,32 @@ def contrastive_loss_v2(pfc_enc, vtx_id, c=0.5, print_bool=False):
         
 
 
-
+def process_batch(data):
+    '''
+    Process the batch of data
+    input:
+    data: the data batch
+    output:
+    data: the processed data batch
+    '''
+    # get the data
+    x_pfc = data.x_pfc.to(device)
+    # normalize z to [-1, 1]
+    data.x_pfc[:,12] = data.x_pfc[:,12]/200.0
+    # normalize the true z to [-1, 1]
+    data.y = data.y/200.0
+    # return the data
+    return data
 
 
 
 def train(reg_ratio = 0.01, neutral_weight = 1):
     net.train()
-    loss_fn = contrastive_loss
+    loss_fn = contrastive_loss_v2
     train_loss = 0
     for counter, data in enumerate(tqdm(train_loader)):
         data = data.to(device)
+        data = process_batch(data)
         optimizer.zero_grad()
         vtx_id = (data.truth != 0).int()
         # adding in the true vertex id itself to check if model is working
@@ -112,15 +129,15 @@ def train(reg_ratio = 0.01, neutral_weight = 1):
             loss += loss_fn(pfc_enc, vtx_id, print_bool=False)
         else:
             loss = loss_fn(pfc_enc, vtx_id, c=0.1, print_bool=False)
-        loss += reg_ratio*((torch.norm(pfc_enc, p=2, dim=1)/10)**4).mean()
+        loss += reg_ratio*((torch.norm(pfc_enc, p=2, dim=1))**4).mean()
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
         if counter % 5000 == 1:
             print("Counter: {}, Average Loss: {}".format(counter, train_loss/counter))
-            print("Regression loss: {}".format(((torch.norm(pfc_enc, p=2, dim=1)/10)**4).mean()))
+            print("Regression loss: {}".format(((torch.norm(pfc_enc, p=2, dim=1))**4).mean()))
             # loss = contrastive_loss(pfc_enc, vtx_id, num_pfc=64, c=0.1, print_bool=True)
-            loss = contrastive_loss_v2(pfc_enc, vtx_id, c=0.1, print_bool=True)
+            loss = loss_fn(pfc_enc, vtx_id, c=0.1, print_bool=True)
     train_loss = train_loss/counter
     return train_loss
 
@@ -147,7 +164,7 @@ for epoch in range(20):
     state_dicts = {'model':net.state_dict(),
                    'opt':optimizer.state_dict()} 
     torch.save(state_dicts, os.path.join(model_dir, 'epoch-{}.pt'.format(epoch)))
-    print("Model saved")
+    print("Model saved at path: {}".format(os.path.join(model_dir, 'epoch-{}.pt'.format(epoch))))
     print("Time elapsed: ", time.time() - start_time)
     print("-----------------------------------------------------")
     # test_loss = test()

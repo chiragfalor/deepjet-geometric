@@ -9,11 +9,11 @@ import torch
 from upuppi_v0_dataset import UPuppiV0
 from torch_geometric.data import DataLoader
 
-net = Net(pfc_input_dim=13)
+net = Net(pfc_input_dim=14)
 
 # random seed
 np.random.seed(0)
-torch.manual_seed(11)
+torch.manual_seed(8)
 
 def visualize_embeddings(pfc1_embeddings, pfc2_embeddings, pfc1_truth, pfc2_truth, save_path):
     # given the embeddings of pfc and vtx, perform PCA and plot the embeddings
@@ -66,19 +66,21 @@ if __name__ == '__main__':
     model = "contrastive_loss"
     model = "embedding_GCN"
     model = "embedding_GCN_v1"
-    test_loader = DataLoader(data_test, batch_size=16, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
+    model = "embedding_GCN_cheating"
+    test_loader = DataLoader(data_test, batch_size=1, shuffle=True, follow_batch=['x_pfc', 'x_vtx'])
     model_dir = '/work/submit/cfalor/upuppi/deepjet-geometric/models/{}/'.format(model)
 
     # load the model
-    epoch_num = 0
+    epoch_num = 13
     upuppi_state_dict = torch.load(model_dir + 'epoch-{}.pt'.format(epoch_num))['model']
+    print(upuppi_state_dict)
     net.load_state_dict(upuppi_state_dict)
     net.eval()
     with torch.no_grad():
         data = next(iter(test_loader))
         # pfc_truth = data.y.detach().numpy()
         pfc_truth = (data.truth != 0).int()
-        # data.x_pfc = torch.cat([data.x_pfc, pfc_truth.unsqueeze(1)], dim=1)
+        data.x_pfc = torch.cat([data.x_pfc, pfc_truth.unsqueeze(1)], dim=1)
         # vtx_truth = data.x_vtx[:, 2].detach().numpy()
         # pfc_embeddings, vtx_embeddings = net(data.x_pfc, data.x_vtx, data.x_pfc_batch, data.x_vtx_batch)
         pfc_embeddings = net(data.x_pfc)
